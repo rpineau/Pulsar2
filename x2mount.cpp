@@ -3,24 +3,17 @@
 
 #include "x2mount.h"
 
-
-
 X2Mount::X2Mount(const char* pszDriverSelection,
-				const int& nInstanceIndex,
-				SerXInterface					* pSerX, 
-				TheSkyXFacadeForDriversInterface	* pTheSkyX, 
-				SleeperInterface					* pSleeper,
-				BasicIniUtilInterface			* pIniUtil,
-				LoggerInterface					* pLogger,
-				MutexInterface					* pIOMutex,
-				TickCountInterface				* pTickCount)
-
-//: m_nPrivateMulitInstanceIndex(nInstanceIndex)
-: m_nPrivateISIndex(nInstanceIndex)
-
-
+                 const int& nInstanceIndex,
+                 SerXInterface                    * pSerX,
+                 TheSkyXFacadeForDriversInterface    * pTheSkyX,
+                 SleeperInterface                    * pSleeper,
+                 BasicIniUtilInterface            * pIniUtil,
+                 LoggerInterface                    * pLogger,
+                 MutexInterface                    * pIOMutex,
+                 TickCountInterface                * pTickCount)
 {
-	m_nPrivateMulitInstanceIndex	= nInstanceIndex;
+	m_nPrivateMulitInstanceIndex	            = nInstanceIndex;
 	m_pSerX							= pSerX;		
 	m_pTheSkyXForMounts				= pTheSkyX;
 	m_pSleeper						= pSleeper;
@@ -91,8 +84,6 @@ int	X2Mount::queryAbstraction(const char* pszName, void** ppVal)
 		*ppVal = dynamic_cast<OpenLoopMoveInterface*>(this);
 	else if (!strcmp(pszName, NeedsRefractionInterface_Name))
 		*ppVal = dynamic_cast<NeedsRefractionInterface*>(this);
-	else if (!strcmp(pszName, LinkFromUIThreadInterface_Name))
-		*ppVal = dynamic_cast<LinkFromUIThreadInterface*>(this);
 	else if (!strcmp(pszName, TrackingRatesInterface_Name))
 		*ppVal = dynamic_cast<TrackingRatesInterface*>(this);
 	else if (!strcmp(pszName, ParkInterface_Name))
@@ -909,7 +900,7 @@ int X2Mount::execModalSettingsDialog(void)
 	if (NULL == ui)
 		return ERR_POINTER;
     
-	if ((nErr = ui->loadUserInterface("Pulsar2.ui", deviceType(), m_nPrivateISIndex)))
+	if ((nErr = ui->loadUserInterface("Pulsar2.ui", deviceType(), m_nPrivateMulitInstanceIndex)))
 		return nErr;
     
 	if (NULL == (dx = uiutil.X2DX()))

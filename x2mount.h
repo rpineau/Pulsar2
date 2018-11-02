@@ -5,22 +5,6 @@
 #include <string.h>
 
 #pragma once
-#include "../../licensedinterfaces/mountdriverinterface.h"
-#include "../../licensedinterfaces/modalsettingsdialoginterface.h"
-#include "../../licensedinterfaces/x2guiinterface.h"
-
-//Optional interfaces, uncomment and implement as required.
-#include "../../licensedinterfaces/mount/slewtointerface.h"
-#include "../../licensedinterfaces/mount/syncmountinterface.h"
-#include "../../licensedinterfaces/mount/asymmetricalequatorialinterface.h"
-#include "../../licensedinterfaces/mount/openloopmoveinterface.h"
-#include "../../licensedinterfaces/mount/needsrefractioninterface.h"
-#include "../../licensedinterfaces/mount/linkfromuithreadinterface.h"
-#include "../../licensedinterfaces/mount/trackingratesinterface.h"
-#include "../../licensedinterfaces/parkinterface.h"
-#include "../../licensedinterfaces/unparkinterface.h"
-#include "../../licensedinterfaces/serialportparams2interface.h"
-
 #include "../../licensedinterfaces/sberrorx.h"
 #include "../../licensedinterfaces/basicstringinterface.h"
 #include "../../licensedinterfaces/serxinterface.h"
@@ -28,10 +12,22 @@
 #include "../../licensedinterfaces/theskyxfacadefordriversinterface.h"
 #include "../../licensedinterfaces/sleeperinterface.h"
 #include "../../licensedinterfaces/loggerinterface.h"
-#include "../../licensedinterfaces/basiciniutilinterface.h"
 #include "../../licensedinterfaces/mutexinterface.h"
 #include "../../licensedinterfaces/tickcountinterface.h"
+#include "../../licensedinterfaces/serialportparams2interface.h"
+#include "../../licensedinterfaces/modalsettingsdialoginterface.h"
+#include "../../licensedinterfaces/x2guiinterface.h"
+#include "../../licensedinterfaces/mountdriverinterface.h"
+#include "../../licensedinterfaces/mount/slewtointerface.h"
+#include "../../licensedinterfaces/mount/syncmountinterface.h"
+#include "../../licensedinterfaces/mount/asymmetricalequatorialinterface.h"
+#include "../../licensedinterfaces/mount/openloopmoveinterface.h"
+#include "../../licensedinterfaces/mount/needsrefractioninterface.h"
+#include "../../licensedinterfaces/mount/trackingratesinterface.h"
+#include "../../licensedinterfaces/parkinterface.h"
+#include "../../licensedinterfaces/unparkinterface.h"
 #include "../../licensedinterfaces/driverslewstoparkpositioninterface.h"
+
 
 #include "StopWatch.h"
 #include "Pulsar2.h"
@@ -64,21 +60,18 @@ enum DEBUG_LEVEL {NONE = 0, METHOD, VERBOSE};
 #define DRIVER_VERSION      1.0
 #define DISPLAY_NAME        "Pulsar2 X2 Plug-In by Richard Francis"
 
-class X2Mount : public MountDriverInterface 
-						//Optional interfaces, uncomment and implement as required.
-						,public SyncMountInterface
-						,public SlewToInterface
-						,public AsymmetricalEquatorialInterface
-						,public OpenLoopMoveInterface
-                        ,public ParkInterface
-                        ,public UnparkInterface
-						//,public NeedsRefractionInterface
-						,public LinkFromUIThreadInterface
-						,public TrackingRatesInterface
-                        ,public ModalSettingsDialogInterface
-                        ,public X2GUIEventInterface
-                        ,public SerialPortParams2Interface
-                        ,public DriverSlewsToParkPositionInterface
+class X2Mount : public MountDriverInterface
+                ,public SyncMountInterface
+                ,public SlewToInterface
+                ,public AsymmetricalEquatorialInterface
+                ,public OpenLoopMoveInterface
+                ,public TrackingRatesInterface
+                ,public ParkInterface
+                ,public UnparkInterface
+                ,public ModalSettingsDialogInterface
+                ,public X2GUIEventInterface
+                ,public SerialPortParams2Interface
+                ,public DriverSlewsToParkPositionInterface
 {
 public:
 	/*!Standard X2 constructor*/
@@ -212,10 +205,6 @@ private:
 
     LoggerInterface							*GetLogger() {return m_pLogger; }
 
-
-//    const int                               m_nPrivateISIndex;
-
-    const int                               m_nPrivateISIndex;
 	int                                     m_nPrivateMulitInstanceIndex;
 	SerXInterface*							m_pSerX;		
 	TheSkyXFacadeForDriversInterface* 		m_pTheSkyXForMounts;
