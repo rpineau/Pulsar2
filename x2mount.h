@@ -32,7 +32,7 @@
 #include "StopWatch.h"
 #include "Pulsar2.h"
 
-#define DRIVER_MAX_STRING   256
+//#define DRIVER_MAX_STRING   256
 
 #define PARENT_KEY_STRING           "Pulsar2X2"
 #define PULSAR2_SERIAL_NAME         "SERIALPORT"
@@ -158,7 +158,9 @@ public:
 
 	//TrackingRatesInterface 
 	virtual int setTrackingRates( const bool& bTrackingOn, const bool& bIgnoreRates, const double& dRaRateArcSecPerSec, const double& dDecRateArcSecPerSec);
-	virtual int trackingRates( bool& bTrackingOn, double& dRaRateArcSecPerSec, double& dDecRateArcSecPerSec);
+    virtual int siderealTrackingOn ();  // added by CRF 3 Nov 2018
+    virtual int trackingOff();          // added by CRF 3 Nov 2018
+    virtual int trackingRates( bool& bTrackingOn, double& dRaRateArcSecPerSec, double& dDecRateArcSecPerSec);
     
 
     //ModalSettings etc.
@@ -222,8 +224,9 @@ private:
     double                                  dHoursWestStored;
     double                                  dFlipHourStored;
     int                                     iMeridianBehaviourStored;
-    int                                     iProvidesRefraction;
     int                                     iLoggingVerbosity;
+    
+    MountDriverInterface::MoveDir           currentMoveDir;
 
     CPulsar2Controller                      Pulsar2;
 

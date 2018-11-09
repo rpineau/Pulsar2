@@ -18,7 +18,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <memory.h>
-#include <string.h>
+// #include <string.h>
 #include <time.h>
 #ifdef SB_MAC_BUILD
 #include <unistd.h>
@@ -32,6 +32,7 @@
 #include "../../licensedinterfaces/serxinterface.h"
 #include "../../licensedinterfaces/loggerinterface.h"
 #include "../../licensedinterfaces/sleeperinterface.h"  // added by Rodolphe in iEQ30 but not commented
+#include "../../licensedinterfaces/theskyxfacadefordriversinterface.h"
 
 #define VERBOSE_FAILURES            0
 #define VERBOSE_ESSENTIAL           1
@@ -53,10 +54,12 @@
 #define SERIAL_BUFFER_SIZE 64
 #define MAX_TIMEOUT 1000        // 1000 ms
 
+#define N_OUT_MAXSIZE 40  // buffer for the UTC timecode in ISO8601 format
+
 #define ACK  0x06
 #define NACK 0x15
 
-#define NB_SLEW_SPEEDS      8
+#define NB_SLEW_SPEEDS      4  // was 8 (I think from iEQ30 driver). There are 4 (Guide, Centre, Find, Slew)
 #define SLEW_NAME_LENGHT    32
 
 enum PULSAR2_Errors    {OK = 0, NOT_CONNECTED, ND_CANT_CONNECT, BAD_CMD_RESPONSE, COMMAND_FAILED};
@@ -71,40 +74,44 @@ class CPulsar2Controller
         ~CPulsar2Controller(void);
     
             
-        bool        Connect(const char *szPort);
-        void        Disconnect(void);
-        bool        IsConnected(void) { return m_bIsConnected; }
+        bool        connect(const char *szPort);
+        void        disconnect(void);
+        bool        isConnected(void) { return m_bIsConnected; }
         
         ////////////////////////////////////////////////////////////////
         // Commands to and from device
         
-        int         Abort(void);                                        // not tested
-        int         GetRADec(double &dRA, double &dDec);                // Works
+        int         stopSlew(void);                                        // not tested
+        int         getRADec(double &dRA, double &dDec);                // Works
+        int         toggleFormat();
 
+        int         setRefractionCorrection(bool bEnabled);
         
-        int         SyncRADec(const double &dRA, const double &dDec);   // Works
-        int         GetSideOfPier(int &nPierSide);                      // not tested
-
-        int         GetFirmware(char *szFirmware, int nMaxStrSize);     // Works
+        int         syncRADec(const double &dRA, const double &dDec);   // Works
+        int         getSideOfPier(int &nPierSide);                      // not tested
+        int         getRefractionCorrection(bool &bRefractionNeeded);
+        int         getFirmware(char *szFirmware, int nMaxStrSize);     // Works
         
         int         startSlew(const double& dRa, const double& dDec, int &nSlewStatus);   // Works
         int         slewStatus(bool &bIsSlewing);                                   // Works
         
-        int         stopMoving(void);                                   // not tested
+        int         stopMoving(int iDir);                                   // not tested
         int         startMove(int iDir, int iSpeedIndex);               // not tested
         
         int         setTrackingRate(int iRate);                              // not tested
         int         trackingOff(void);                                  // not tested
         int         getTracking(int &iTrackingRate);                    // not tested
 
-        int         Park(const double& dAz, const double& dAlt);                                         // not tested
+        int         park(const double& dAz, const double& dAlt);                                         // not tested
         int         unPark();                                       // not tested
-        int         parkStatus(bool &isParked);                                // not tested
+        int         parkStatus(bool &isParked, bool &isParking);                                // not tested
 
+        ////////////////////////////////////////////////////////////////
 
-        void        SetSerxPointer(SerXInterface *p) { m_pSerx = p; }
-        void        SetLoggerPointer(LoggerInterface *p) { pLogger = p; }
+        void        setSerxPointer(SerXInterface *p) { m_pSerx = p; }
+        void        setLoggerPointer(LoggerInterface *p) { pLogger = p; }
         void        setSleeper(SleeperInterface *p) { pSleeper = p; }         // added by Rodolphe in iEQ30
+        void        setTSX(TheSkyXFacadeForDriversInterface *pTSX) { m_pTsx = pTSX;};
 
         bool        m_bIsSlewing = false;
 
@@ -114,13 +121,17 @@ class CPulsar2Controller
 
         int         iVerbosity = VERBOSE_ESSENTIAL;
 
-        int getNbSlewRates();
-        int getRateName(int nZeroBasedIndex, char *pszOut, unsigned int nOutMaxSize);
+        int         getNbSlewRates();
+        int         getRateName(int nZeroBasedIndex, char *pszOut, unsigned int nOutMaxSize);
 
     protected:
 
         int         sendCommand(const char *pszCmd, char *pszResult, int nResultMaxLen);
         int         readResponse(char *szRespBuffer, int nBufferLen);
+        
+        int         setDateAndTime();
+        int         setLocation();
+
         
         bool        m_bIsConnected;
     
@@ -130,17 +141,19 @@ class CPulsar2Controller
 
         char        m_szFirmware[SERIAL_BUFFER_SIZE];
 
-        LoggerInterface      *pLogger;
-        
-        SerXInterface        *m_pSerx;
-        
+        LoggerInterface     *pLogger;
+        SerXInterface       *m_pSerx;
         SleeperInterface    *pSleeper;        // added by Rodolphe in iEQ30
+        TheSkyXFacadeForDriversInterface    *m_pTsx;
 
-        unsigned char        szFirmware[9];
+        unsigned char       szFirmware[9];
+        int                 iMajorFirmwareVersion; // added by CRF 4 Nov 2018, to be used to distinguish commands in v. 5.xx
         char                m_szLogMessage[LOG_BUFFER_SIZE];
 
-        const char m_aszSlewRateNames[NB_SLEW_SPEEDS][SLEW_NAME_LENGHT] = { "Sidereal", "2x Sidereal", "8x Sidereal", "16x Sidereal",
-                                                                            "64x Sidereal", "128x Sidereal", "256x Sidereal", "512x Sidereal"};
+// This is the previous version. This seems to be left over from the iEQ30 driver
+//        const char m_aszSlewRateNames[NB_SLEW_SPEEDS][SLEW_NAME_LENGHT] = { "Sidereal", "2x Sidereal", "8x Sidereal", "16x Sidereal",
+//            "64x Sidereal", "128x Sidereal", "256x Sidereal", "512x Sidereal"};
+        const char m_aszSlewRateNames[NB_SLEW_SPEEDS][SLEW_NAME_LENGHT] = {"Guide", "Centre", "Find", "Slew"};
 
 #ifdef VERBOSE_DEBUG
         std::string m_sLogfilePath;

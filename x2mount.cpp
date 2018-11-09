@@ -32,14 +32,13 @@ X2Mount::X2Mount(const char* pszDriverSelection,
         dHoursWestStored = m_pIniUtil->readDouble(PARENT_KEY_STRING, PULSAR2_HOURS_WEST, 0.0);
         dFlipHourStored = m_pIniUtil->readDouble(PARENT_KEY_STRING, PULSAR2_FLIPHOUR, 0.0);
         iMeridianBehaviourStored = m_pIniUtil->readInt(PARENT_KEY_STRING, PULSAR2_MERIDIAN, 1);
-        iProvidesRefraction = m_pIniUtil->readInt(PARENT_KEY_STRING, PULSAR2_REFRACTION, 0);
 //        iLoggingVerbosity = m_pIniUtil->readInt(PARENT_KEY_STRING, PULSAR2_VERBOSITY, 0);
     }
     
 // set pointers to some of the interfaces inside the Pulsar2 class
     Pulsar2.setSleeper(pSleeper);  // added by Rodolphe in iEQ30
-    Pulsar2.SetSerxPointer(pSerX);
-    Pulsar2.SetLoggerPointer(pLogger);
+    Pulsar2.setSerxPointer(pSerX);
+    Pulsar2.setLoggerPointer(pLogger);
 
 //    Pulsar2.iVerbosity = iLoggingVerbosity;
     iLoggingVerbosity = Pulsar2.iVerbosity;
@@ -69,7 +68,10 @@ X2Mount::~X2Mount()
 
 }
 
-
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+#pragma mark - DriverRootInterface
+////////////////////////////////////////////////////////////////////////////
 int	X2Mount::queryAbstraction(const char* pszName, void** ppVal)
 {
 	*ppVal = NULL;
@@ -90,6 +92,8 @@ int	X2Mount::queryAbstraction(const char* pszName, void** ppVal)
 		*ppVal = dynamic_cast<ParkInterface*>(this);
 	else if (!strcmp(pszName, UnparkInterface_Name))
 		*ppVal = dynamic_cast<UnparkInterface*>(this);
+    else if (!strcmp(pszName, DriverSlewsToParkPositionInterface_Name))
+        *ppVal = dynamic_cast<DriverSlewsToParkPositionInterface*>(this);  // added by CRF 3 Nov 2018
     else if (!strcmp(pszName, SerialPortParams2Interface_Name))
         *ppVal = dynamic_cast<SerialPortParams2Interface*>(this);
 	else if (!strcmp(pszName, LoggerInterface_Name)) //Add support for the optional LoggerInterface
@@ -106,8 +110,10 @@ int	X2Mount::queryAbstraction(const char* pszName, void** ppVal)
 }
 
 ////////////////////////////////////////////////////////////////////////////
-//LinkInterface
-int	X2Mount::establishLink(void)					
+////////////////////////////////////////////////////////////////////////////
+#pragma mark - LinkInterface
+////////////////////////////////////////////////////////////////////////////
+int	X2Mount::establishLink(void)
 {
     
 	X2MutexLocker ml(GetMutex());
@@ -117,7 +123,7 @@ int	X2Mount::establishLink(void)
             GetLogger()->out((char *) "X2Mount::establishLink");
 
     
-    if(Pulsar2.Connect(serialName))
+    if(Pulsar2.connect(serialName))
         {
         m_bLinked = true;
             if (iLoggingVerbosity >= VERBOSE_ESSENTIAL)
@@ -135,7 +141,7 @@ int	X2Mount::establishLink(void)
         }
 }
 
-
+////////////////////////////////////////////////////////////////////////////
 int	X2Mount::terminateLink(void)						
 {
     if(!m_bLinked)
@@ -143,7 +149,7 @@ int	X2Mount::terminateLink(void)
 
     X2MutexLocker ml(GetMutex());
 
-    Pulsar2.Disconnect();
+    Pulsar2.disconnect();
 	m_bLinked = false;
     if (iLoggingVerbosity >= VERBOSE_ESSENTIAL)
         if (GetLogger())
@@ -152,7 +158,8 @@ int	X2Mount::terminateLink(void)
 }
 
 
-bool X2Mount::isLinked(void) const					
+////////////////////////////////////////////////////////////////////////////
+bool X2Mount::isLinked(void) const
 {
 	return m_bLinked;
 }
@@ -164,8 +171,9 @@ bool X2Mount::isEstablishLinkAbortable(void) const
 }
 
 
-
-
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+#pragma mark - DriverInfoInterface
 ////////////////////////////////////////////////////////////////////////////
 //AbstractDriverInfo
 
@@ -208,7 +216,7 @@ void X2Mount::deviceInfoFirmwareVersion(BasicStringInterface& str)
     if (m_bLinked) {
         X2MutexLocker ml(GetMutex());
         char szFirmware[SERIAL_BUFFER_SIZE];
-        if(Pulsar2.GetFirmware(szFirmware, SERIAL_BUFFER_SIZE))
+        if(Pulsar2.getFirmware(szFirmware, SERIAL_BUFFER_SIZE))
             str = szFirmware;
         else
             str = "Device Not Connected.";
@@ -225,6 +233,9 @@ void X2Mount::deviceInfoModel(BasicStringInterface& str)
 
 
 ////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+#pragma mark - MountDriverInterface
+////////////////////////////////////////////////////////////////////////////
 //Common Mount specifics
 int	X2Mount::raDec(double& ra, double& dec, const bool& bCached)
 {
@@ -240,7 +251,7 @@ int	X2Mount::raDec(double& ra, double& dec, const bool& bCached)
 
     X2MutexLocker ml(GetMutex());
 
-    nErr = Pulsar2.GetRADec(ra, dec);
+    nErr = Pulsar2.getRADec(ra, dec);
     
     if (iLoggingVerbosity >= VERBOSE_RESULTS)
         if (GetLogger())
@@ -253,7 +264,8 @@ int	X2Mount::raDec(double& ra, double& dec, const bool& bCached)
 }
 
 ////////////////////////////////////////////////////////////////////////////
-// Abort
+// Abort any operation currently in progress.
+// The best approximation, in that it does stop motion, is to call stopSlew()
 int	X2Mount::abort(void)
 {
     
@@ -265,7 +277,7 @@ int	X2Mount::abort(void)
         return ERR_NOLINK;
     X2MutexLocker ml(GetMutex());
 
-    Pulsar2.Abort();
+    Pulsar2.stopSlew();
     
     return SB_OK;
 
@@ -273,7 +285,12 @@ int	X2Mount::abort(void)
 
 
 
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+#pragma mark - SyncMountInterface
+////////////////////////////////////////////////////////////////////////////
 int X2Mount::syncMount(const double& ra, const double& dec)
+// Set the mount internal RA and declination.
 {
 
     if (iLoggingVerbosity >= VERBOSE_FUNCTION_TRACKING)
@@ -285,18 +302,19 @@ int X2Mount::syncMount(const double& ra, const double& dec)
 
     X2MutexLocker ml(GetMutex());
 
-    if (!Pulsar2.SyncRADec(ra, dec))
+    if (!Pulsar2.syncRADec(ra, dec))
         return ERR_CMDFAILED;
 
  return SB_OK;
 }
 
 ////////////////////////////////////////////////////////////////////////////
+
+bool X2Mount::isSynced()
 // Always return true.
 // If possible, return false when appropriate, if and only if the mount hardware
 // has the ability to know if it has been synced or not.
-
-bool X2Mount::isSynced()
+// Pulsar2 does not, so always return true
 {
     if(!m_bLinked)
         return ERR_NOLINK;
@@ -314,10 +332,8 @@ bool X2Mount::isSynced()
 
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
-// AsymmetricalEquatorialInterface
+#pragma mark - AsymmetricalEquatorialInterface
 ////////////////////////////////////////////////////////////////////////////
-
-
 bool X2Mount::knowsBeyondThePole()
 {
     
@@ -330,6 +346,7 @@ bool X2Mount::knowsBeyondThePole()
 
 
 ////////////////////////////////////////////////////////////////////////////
+int X2Mount::beyondThePole(bool& bYes)
 /*!
  If knowsBeyondThePole() returns true,
  then beyondThePole() tells TheSkyX unambiguously
@@ -338,10 +355,7 @@ bool X2Mount::knowsBeyondThePole()
  Note, the return value must be correct even
  for cases where the OTA end of the Dec axis
  is lower than the counterweights.
- 
  */
-
-int X2Mount::beyondThePole(bool& bYes)
 {
     int nErr = SB_OK;
     int poleResult;
@@ -355,13 +369,16 @@ int X2Mount::beyondThePole(bool& bYes)
 
     X2MutexLocker ml(GetMutex());
 
-    nErr = Pulsar2.GetSideOfPier(poleResult);
+    nErr = Pulsar2.getSideOfPier(poleResult);
     if(nErr)
         return nErr;
 
     // we will define west (1) as normal, and
     // east (0) as beyond the pole
-    bYes = poleResult == 1?false:true;
+    //
+    // That was wrong: https://www.gralak.com/apdriver/help/pier_side.htm explains
+    // that East (here 0) is normal, and West (1) is Beyond the Pole
+    bYes = poleResult == 1?true:false;
 
     return nErr;
  }
@@ -408,10 +425,14 @@ int X2Mount::gemLimits(double& dHoursEast, double& dHoursWest)
 
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
-// NeedsRefractionInterface
+#pragma mark - NeedsRefractionInterface
 ////////////////////////////////////////////////////////////////////////////
 //
 // only one function
+//
+// We will ensure in the initialisation that refraction correction is turned off
+// So the response will always be true
+//
 
 bool X2Mount::needsRefactionAdjustments(void)
 {
@@ -424,9 +445,6 @@ bool X2Mount::needsRefactionAdjustments(void)
         if (GetLogger())
             GetLogger()->out((char *) "X2Mount::needsRefractionAdjustments");
     
-    if (iProvidesRefraction == 0)
-        return false;
-    else
         return true;
 
 }
@@ -434,9 +452,9 @@ bool X2Mount::needsRefactionAdjustments(void)
 
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
-// SlewToInterfaceInterface
+#pragma mark - SlewToInterface
 ////////////////////////////////////////////////////////////////////////////
-// NB -- seems to not be called -- Abort is called instead
+// NB -- seems to not be called -- Abort is called instead [don't understand this comment]
 
 int X2Mount::startSlewTo(const double& dRa, const double& dDec)
 {
@@ -474,14 +492,14 @@ int X2Mount::startSlewTo(const double& dRa, const double& dDec)
     else
         return ERR_COMMANDINPROGRESS;
     
-/*
+// This bit was commented out before, probably due to the wrong interpreatation of
+//  the Pulsar2 response in the called method startSlew()
     if (nSlewResult == 1)
         nErr = SB_OK; // accepted
     else if (nSlewResult == 0)
         nErr = ERR_LX200DESTBELOWHORIZ;  // below horizon (but with LX200 message)
     else
         nErr = ERR_CMDFAILED;  // error
-*/
 
     return nErr;
 }
@@ -510,7 +528,12 @@ int X2Mount::isCompleteSlewTo(bool& bComplete) const
 
 
 ////////////////////////////////////////////////////////////////////////////
-// I don't know what to put in this function
+// This function is called after isCompleteSlewTo() shows the slew is finished.
+// The documentation says:
+//  Called once the slew is complete. This is called once for every corresponding
+//  startSlewTo() allowing software implementations of gotos.
+//
+// There dowsn't seem to be any useful function to put in here.
 //
 int X2Mount::endSlewTo(void)
 {
@@ -525,12 +548,12 @@ int X2Mount::endSlewTo(void)
 
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
-//OpenLoopMoveInterface
+#pragma mark - OpenLoopMoveInterface
 ////////////////////////////////////////////////////////////////////////////
 //
 int X2Mount::startOpenLoopMove(const MountDriverInterface::MoveDir& Dir, const int& nRateIndex)
+// Start the open-loop move.
 {
-
     if (iLoggingVerbosity >= VERBOSE_FUNCTION_TRACKING)
         if (GetLogger())
             GetLogger()->out((char *) "X2Mount::startOpenLoopMove");
@@ -540,7 +563,10 @@ int X2Mount::startOpenLoopMove(const MountDriverInterface::MoveDir& Dir, const i
 
     X2MutexLocker ml(GetMutex());
 
-    iRateIndex = nRateIndex;
+    iRateIndex = nRateIndex;  // not sure what this is good for
+    
+    // note the commanded direction
+    currentMoveDir = Dir;
 
     if (Pulsar2.startMove(int(Dir), nRateIndex))
         return SB_OK;
@@ -553,6 +579,12 @@ int X2Mount::startOpenLoopMove(const MountDriverInterface::MoveDir& Dir, const i
 ////////////////////////////////////////////////////////////////////////////
 //
 int	X2Mount::endOpenLoopMove(void)
+// End the open-loop move. This function is always called for every
+// corresponding startOpenLoopMove(), allowing software implementations of the move.
+//
+// To do this properly we will need to keep track of the direction of the
+// corresponding startOpenLoopMove(), since each stop command is specific
+// We do this via the private property currentMoveDir
 {
     if (iLoggingVerbosity >= VERBOSE_FUNCTION_TRACKING)
         if (GetLogger())
@@ -563,13 +595,15 @@ int	X2Mount::endOpenLoopMove(void)
 
     X2MutexLocker ml(GetMutex());
 
-    return Pulsar2.stopMoving();
+    return Pulsar2.stopMoving((int)currentMoveDir);
 }
 
 
 ////////////////////////////////////////////////////////////////////////////
 //
 bool X2Mount::allowDiagonalMoves(void)
+// Return true if the mount can be commanded to move in more than one
+// perpendicular axis at the same time, otherwise return false.
 {
     return false;
 }
@@ -578,13 +612,16 @@ bool X2Mount::allowDiagonalMoves(void)
 ////////////////////////////////////////////////////////////////////////////
 //
 int X2Mount::rateCountOpenLoopMove(void) const
+// Return the number (count) of avaiable moves.
 {
     X2Mount* pMe = (X2Mount*)this;
     X2MutexLocker ml(pMe->GetMutex());
     return pMe->Pulsar2.getNbSlewRates();
 }
 
+////////////////////////////////////////////////////////////////////////////
 int X2Mount::rateNameFromIndexOpenLoopMove(const int& nZeroBasedIndex, char* pszOut, const int& nOutMaxSize)
+// Return a string along with the amount or size of the corresponding move.
 {
     int nErr = SB_OK;
     nErr = Pulsar2.getRateName(nZeroBasedIndex, pszOut, nOutMaxSize);
@@ -607,6 +644,7 @@ int X2Mount::rateNameFromIndexOpenLoopMove(const int& nZeroBasedIndex, char* psz
 ////////////////////////////////////////////////////////////////////////////
 //
 int	X2Mount::rateIndexOpenLoopMove(void)
+// Return the current index of move selection.
 {
     return iRateIndex;
 }
@@ -614,7 +652,7 @@ int	X2Mount::rateIndexOpenLoopMove(void)
 
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
-// TrackingRatesInterface
+#pragma mark - TrackingRatesInterface
 ////////////////////////////////////////////////////////////////////////////
 //
 int X2Mount::setTrackingRates( const bool& bTrackingOn, const bool& bIgnoreRates, const double& dRaRateArcSecPerSec, const double& dDecRateArcSecPerSec)
@@ -689,6 +727,33 @@ int X2Mount::setTrackingRates( const bool& bTrackingOn, const bool& bIgnoreRates
 
     return nErr;
 }
+
+////////////////////////////////////////////////////////////////////////////
+//
+int X2Mount::siderealTrackingOn()   // added by CRF 3 Nov 2018
+// Turn on sidereal tracking. Provided for convenience, merely calls setTrackingRates() function.
+{
+    int nErr;
+    nErr = SB_OK;
+ 
+    nErr = Pulsar2.setTrackingRate(SIDEREAL);
+
+    return nErr;
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+int X2Mount::trackingOff()   // added by CRF 3 Nov 2018
+// Turn off tracking. Provided for convenience, merely calls setTrackingRates() function.
+{
+    int nErr;
+    nErr = SB_OK;
+    
+    nErr = Pulsar2.setTrackingRate(STOPPED);
+
+    return nErr;
+}
+
 
 
 ////////////////////////////////////////////////////////////////////////////
@@ -769,13 +834,18 @@ int X2Mount::trackingRates( bool& bTrackingOn, double& dRaRateArcSecPerSec, doub
 
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
-// ParkInterface
+#pragma mark - ParkInterface
 ////////////////////////////////////////////////////////////////////////////
 //
 bool X2Mount::isParked(void)
+// Return true if the device is parked.
 {
+    int nErr = SB_OK;
+
     bool bIsParked;
-    if (iLoggingVerbosity >= VERBOSE_FUNCTION_TRACKING)
+    bool bIsParking;
+    
+   if (iLoggingVerbosity >= VERBOSE_FUNCTION_TRACKING)
         if (GetLogger())
             GetLogger()->out((char *) "X2Mount::isParked");
 
@@ -784,47 +854,80 @@ bool X2Mount::isParked(void)
 
     X2MutexLocker ml(GetMutex());
 
-    Pulsar2.parkStatus(bIsParked);
+   nErr = Pulsar2.parkStatus(bIsParked, bIsParking);
 
     return bIsParked;
 }
 
+////////////////////////////////////////////////////////////////////////////
+int    X2Mount::isCompletePark(bool& bComplete) const
+// Called to monitor the park process.
+//
+// bComplete    Set to true if the park is complete, otherwise set to false.
+//
+{
+    int nErr = SB_OK;
+    
+    bool bIsParked;
+    bool bIsParking;
 
+    // This bit throws an error: re;ated to the use of const in the definition.
+    // I don't know why it's there
+/*
+    if (iLoggingVerbosity >= VERBOSE_FUNCTION_TRACKING)
+        if (GetLogger())
+            GetLogger()->out((char *) "X2Mount::isCompletePark");
+*/
+    
+    if(!m_bLinked)
+        return ERR_NOLINK;
+    
+    X2Mount* pMe = (X2Mount*)this;
+    X2MutexLocker ml(pMe->GetMutex());
+   nErr = pMe->Pulsar2.parkStatus(bIsParked, bIsParking);
+
+    if (bIsParking){
+        bComplete = false;
+        return nErr;
+    }
+    if (bIsParked) {
+        bComplete = true;
+        return nErr;
+    }
+    bComplete = false;
+    return nErr;
+}
+
+
+////////////////////////////////////////////////////////////////////////////
 int	X2Mount::startPark(const double& dAz, const double& dAlt)
 {
-
-    return ERR_NOT_IMPL;
-/*
+// Initiate the park process.
+// The implication of the arguments is that TSX will set the Az and Alt of the park position
+// However, by virtue of the DriverSlewsToParkPositionInterface it won't actually
+// do it, so we can safely ignore these parameters.
+    
     if (iLoggingVerbosity >= VERBOSE_FUNCTION_TRACKING)
         if (GetLogger())
             GetLogger()->out((char *) "X2Mount::startPark");
 
 	X2MutexLocker ml(GetMutex());
     
-    if (Pulsar2.Park(dAz, dAlt))
+    if (Pulsar2.park(dAz, dAlt))
         return SB_OK;
     else
         return ERR_CMDFAILED;
-*/
+
 }
 
 
-int	X2Mount::isCompletePark(bool& bComplete) const
-{
-    int nErr = SB_OK;
 
-    if(!m_bLinked)
-        return ERR_NOLINK;
-
-    X2Mount* pMe = (X2Mount*)this;
-    X2MutexLocker ml(pMe->GetMutex());
-    nErr = pMe->Pulsar2.parkStatus(bComplete);
-
-    return nErr;
-}
-
-
+////////////////////////////////////////////////////////////////////////////
 int	X2Mount::endPark(void)
+// Called once the park is complete. This is called once for every corresponding
+// startPark() allowing software implementations of park.
+//
+// It's not necessary to put anything in here
 {
     return SB_OK;
 }
@@ -832,10 +935,11 @@ int	X2Mount::endPark(void)
 
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
-// UnparkInterface
+#pragma mark - UnparkInterface
 ////////////////////////////////////////////////////////////////////////////
 //
 int	X2Mount::startUnpark(void)
+// Initiate the park process.
 {
     int nErr = SB_OK;
     if (iLoggingVerbosity >= VERBOSE_FUNCTION_TRACKING)
@@ -847,7 +951,6 @@ int	X2Mount::startUnpark(void)
 
 	X2MutexLocker ml(GetMutex());
     
-    // Just switch on sidereal tracking, like Pulsar2 does
     nErr = Pulsar2.unPark();
 
     return nErr;
@@ -855,10 +958,21 @@ int	X2Mount::startUnpark(void)
 }
 
 
+////////////////////////////////////////////////////////////////////////////
 int	X2Mount::isCompleteUnpark(bool& bComplete) const
+// Called to monitor the unpark process.
 {
     int nErr = SB_OK;
     bool bIsParked;
+    bool bIsParking;
+
+    // This bit throws an error: related to the use of const in the definition.
+    // I don't know why it's there
+    /*
+     if (iLoggingVerbosity >= VERBOSE_FUNCTION_TRACKING)
+     if (GetLogger())
+     GetLogger()->out((char *) "X2Mount::isCompleteUnpark");
+     */
 
     bComplete = false;
 
@@ -868,17 +982,32 @@ int	X2Mount::isCompleteUnpark(bool& bComplete) const
     X2Mount* pMe = (X2Mount*)this;
     X2MutexLocker ml(pMe->GetMutex());
 
-    // need to check park status
-    nErr = pMe->Pulsar2.parkStatus(bIsParked);
+    // check park status
+    nErr = pMe->Pulsar2.parkStatus(bIsParked, bIsParking);
     if(nErr)
         return nErr;
 
-    bComplete = bIsParked?false:true;
+    if (bIsParking){
+        bComplete = false;
+        return nErr;
+    }
+    if (bIsParked) {
+        bComplete = false;
+        return nErr;
+    }
+    bComplete = true;
     return nErr;
+    
+
 }
 
 
+////////////////////////////////////////////////////////////////////////////
 int	X2Mount::endUnpark(void)
+// Called once the unpark is complete. This is called once for every corresponding
+// startUnpark() allowing software implementations of unpark.
+//
+// It's not necessary to put anything in here
 {
     return SB_OK;
 }
@@ -887,6 +1016,7 @@ int	X2Mount::endUnpark(void)
 
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
+#pragma mark - ModalSettingsDialogInterface
 // handle dialog box
 //
 int X2Mount::execModalSettingsDialog(void)
@@ -928,10 +1058,6 @@ int X2Mount::execModalSettingsDialog(void)
 
     dx->setPropertyDouble("doubleSpinBox_HourFlip", "value", dFlipHourStored);
             
-    if (iProvidesRefraction == 0)
-        dx->setChecked("checkBox_Refraction", true);  // checked if mount provides refraction correction
-    else
-        dx->setChecked("checkBox_Refraction", false);  // checked if mount provides refraction correction
     
 //    dx->setPropertyInt("horizontalSlider_Verbosity", "value", iLoggingVerbosity);
     
@@ -954,10 +1080,6 @@ int X2Mount::execModalSettingsDialog(void)
 
         dx->propertyDouble("doubleSpinBox_HourFlip", "value", dFlipHourStored);
         
-        if (dx->isChecked("checkBox_Refraction"))
-            iProvidesRefraction = 0;  // Mount does provide refraction correction
-        else
-            iProvidesRefraction = 1;  // Mount does NOT provide refraction correction
 
 //        dx->propertyInt("horizontalSlider_Verbosity", "value", iLoggingVerbosity);
 //        Pulsar2.iVerbosity = iLoggingVerbosity;
@@ -969,7 +1091,6 @@ int X2Mount::execModalSettingsDialog(void)
             m_pIniUtil->writeDouble(PARENT_KEY_STRING, PULSAR2_HOURS_WEST,  dHoursWestStored);
             m_pIniUtil->writeDouble(PARENT_KEY_STRING, PULSAR2_FLIPHOUR,  dFlipHourStored);
             m_pIniUtil->writeInt(PARENT_KEY_STRING, PULSAR2_MERIDIAN,  iMeridianBehaviourStored);
-            m_pIniUtil->writeInt(PARENT_KEY_STRING, PULSAR2_REFRACTION, iProvidesRefraction);
 //            m_pIniUtil->writeInt(PARENT_KEY_STRING, PULSAR2_VERBOSITY, iLoggingVerbosity);
         }
     }
@@ -979,12 +1100,17 @@ int X2Mount::execModalSettingsDialog(void)
 }
 
 ////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+#pragma mark - X2GUIEventInterface
+////////////////////////////////////////////////////////////////////////////
 void X2Mount::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
 {
 }
 
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
 #pragma mark - SerialPortParams2Interface
-
+//
 void X2Mount::portName(BasicStringInterface& str) const
 {
     char szPortName[DRIVER_MAX_STRING];

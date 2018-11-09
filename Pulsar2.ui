@@ -178,19 +178,6 @@
       <double>0.100000000000000</double>
      </property>
     </widget>
-    <widget class="QCheckBox" name="checkBox_Refraction">
-     <property name="geometry">
-      <rect>
-       <x>24</x>
-       <y>240</y>
-       <width>280</width>
-       <height>20</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>Mount provides refraction correction</string>
-     </property>
-    </widget>
     <widget class="QGroupBox" name="groupBox">
      <property name="geometry">
       <rect>
