@@ -32,8 +32,6 @@
 #include "StopWatch.h"
 #include "Pulsar2.h"
 
-//#define DRIVER_MAX_STRING   256
-
 #define PARENT_KEY_STRING           "Pulsar2X2"
 #define PULSAR2_SERIAL_NAME         "SERIALPORT"
 #define PULSAR2_MERIDIAN            "MERIDIAN"

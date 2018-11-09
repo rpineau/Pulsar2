@@ -65,15 +65,14 @@ bool CPulsar2Controller::connect(const char *szPort)
 //
 {
     int nErr = SB_OK;
-    
-    if(m_pSerx->open(szPort, 38400, SerXInterface::B_NOPARITY, "-DTR_CONTROL 1") == 0)
-        m_bIsConnected = true;
-    else
+
+    m_bIsConnected = true;
+    nErr = m_pSerx->open(szPort, 38400, SerXInterface::B_NOPARITY, "-DTR_CONTROL 1");
+    if(nErr) {
         m_bIsConnected = false;
-    
-    if(!m_bIsConnected)
-        return ERR_COMMNOLINK;
-    
+        return nErr;
+    }
+
     // Validate that we are talking to an Pulsar2 by
     // getting the firmware version.
     // If this doesn't work
@@ -96,7 +95,7 @@ bool CPulsar2Controller::connect(const char *szPort)
     nErr = setRefractionCorrection(false);
     
     // set the Pulsar2 time to TSX time
-//    nErr = setDateAndTime();                  // leace it off for now to check clock stability
+//    nErr = setDateAndTime();                  // leave it off for now to check clock stability
     
     // set the Pulsar2 location to TSX location
     nErr = setLocation();
