@@ -53,6 +53,7 @@
 #define LOG_BUFFER_SIZE 256
 #define SERIAL_BUFFER_SIZE 64
 #define MAX_TIMEOUT 1000        // 1000 ms
+#define TIMEOUT_READ 1500
 
 #define N_OUT_MAXSIZE 40  // buffer for the UTC timecode in ISO8601 format
 

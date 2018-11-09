@@ -11,7 +11,6 @@
 
 #include "Pulsar2.h"
 
-#define TIMEOUT_READ        1500
 
 
 
