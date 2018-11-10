@@ -42,7 +42,7 @@
 #define VERBOSE_FUNCTION_TRACKING   3
 #define VERBOSE_ALL                 4
 
-#define VERBOSE_DEBUG   VERBOSE_ALL
+#define PULSAR2_DEBUG VERBOSE_ALL
 
 #define STOPPED     0
 #define SIDEREAL    1
@@ -161,7 +161,7 @@ class CPulsar2Controller
 //            "64x Sidereal", "128x Sidereal", "256x Sidereal", "512x Sidereal"};
         const char m_aszSlewRateNames[NB_SLEW_SPEEDS][SLEW_NAME_LENGHT] = {"Guide", "Centre", "Find", "Slew"};
 
-#ifdef VERBOSE_DEBUG
+#ifdef PULSAR2_DEBUG
         std::string m_sLogfilePath;
         // timestamp for logs
         char *timestamp;

@@ -637,15 +637,6 @@ int X2Mount::rateNameFromIndexOpenLoopMove(const int& nZeroBasedIndex, char* psz
     int nErr = SB_OK;
     nErr = Pulsar2.getRateName(nZeroBasedIndex, pszOut, nOutMaxSize);
     if(nErr) {
-#ifdef ATCS_X2_DEBUG
-        if (LogFile) {
-            time_t ltime = time(NULL);
-            char *timestamp = asctime(localtime(&ltime));
-            timestamp[strlen(timestamp) - 1] = 0;
-            fprintf(LogFile, "[%s] rateNameFromIndexOpenLoopMove ERROR %d\n", timestamp, nErr);
-            fflush(LogFile);
-        }
-#endif
         return ERR_CMDFAILED;
     }
     return nErr;
