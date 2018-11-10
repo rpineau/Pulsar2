@@ -978,7 +978,7 @@ int CPulsar2Controller::syncRADec(const double &dRa, const double &dDec)
     if(nErr)
         return nErr;
     
-    nErr = sendCommand(":CM#", szResp, SERIAL_BUFFER_SIZE);
+    nErr = sendCommand(":CM#", szResp, SERIAL_BUFFER_SIZE, 2);
     if(nErr)
         return nErr;
     
@@ -1617,6 +1617,26 @@ double CPulsar2Controller::decStringToDouble(char* cDecString)
     
     return dDec;
     
+}
+
+
+int CPulsar2Controller::parseFields(const char *pszIn, std::vector<std::string> &svFields, char cSeparator)
+{
+    int nErr = OK;
+    std::string sSegment;
+    std::stringstream ssTmp(pszIn);
+
+    svFields.clear();
+    // split the string into vector elements
+    while(std::getline(ssTmp, sSegment, cSeparator))
+    {
+        svFields.push_back(sSegment);
+    }
+
+    if(svFields.size()==0) {
+        nErr = ERR_BADFORMAT;
+    }
+    return nErr;
 }
 
 

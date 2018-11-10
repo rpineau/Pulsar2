@@ -26,7 +26,9 @@
 
 // C++ includes
 #include <string>
-
+#include <vector>
+#include <sstream>
+#include <iostream>
 
 #include "../../licensedinterfaces/sberrorx.h"
 #include "../../licensedinterfaces/serxinterface.h"
@@ -150,7 +152,9 @@ class CPulsar2Controller
         char       szFirmware[9];
         int                 iMajorFirmwareVersion; // added by CRF 4 Nov 2018, to be used to distinguish commands in v. 5.xx
         char                m_szLogMessage[LOG_BUFFER_SIZE];
-        
+
+        int             parseFields(const char *pszIn, std::vector<std::string> &svFields, char cSeparator);
+
 
 // This is the previous version. This seems to be left over from the iEQ30 driver
 //        const char m_aszSlewRateNames[NB_SLEW_SPEEDS][SLEW_NAME_LENGHT] = { "Sidereal", "2x Sidereal", "8x Sidereal", "16x Sidereal",
