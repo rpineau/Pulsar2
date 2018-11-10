@@ -58,7 +58,7 @@ CPulsar2Controller::~CPulsar2Controller(void)
 ////////////////////////////////////////////////////////////////////////////
 #pragma mark - Serial Link
 ////////////////////////////////////////////////////////////////////////////
-bool CPulsar2Controller::connect(const char *szPort)
+int CPulsar2Controller::connect(const char *szPort)
 //
 // Firmware Validity: all
 //
@@ -67,9 +67,9 @@ bool CPulsar2Controller::connect(const char *szPort)
 
     m_bIsConnected = true;
     nErr = m_pSerx->open(szPort, 38400, SerXInterface::B_NOPARITY);
-    if(nErr != SB_OK) { // was if(nErr)
+    if(nErr != SB_OK) {
         m_bIsConnected = false;
-        return m_bIsConnected;
+        return nErr;    // return the actual error to TSX so it can display the error dialog.
     }
 #if defined VERBOSE_DEBUG && VERBOSE_DEBUG >= 2
     ltime = time(NULL);
@@ -110,7 +110,7 @@ bool CPulsar2Controller::connect(const char *szPort)
 
 */
     
-    return m_bIsConnected;
+    return nErr;
 }
 
 
@@ -156,7 +156,7 @@ int CPulsar2Controller::sendCommand(const char *pszCmd, char *pszResult, int nRe
     if(nErr)
         return nErr;
     
-    if (!pszResult) // we don't expect a response
+    if (!pszResult) // it's NULL so we don't expect a response
         return nErr;
     
     // read response
@@ -180,8 +180,7 @@ int CPulsar2Controller::sendCommand(const char *pszCmd, char *pszResult, int nRe
 #endif
     
     if(pszResult)
-//        strncpy(pszResult, &szResp[1], nResultMaxLen);  // why are we skipping the first character? We always need it.
-    strncpy(pszResult, &szResp[0], nResultMaxLen);
+        strncpy(pszResult, szResp, nResultMaxLen);
 
     return nErr;
     
@@ -215,7 +214,8 @@ int CPulsar2Controller::readResponse(char *szRespBuffer, int nBufferLen)
             return nErr;
         }
         
-        if (ulBytesRead !=1) {// timeout
+        if (ulBytesRead !=1) {
+            // timeout, do not error out in there as some command don't end with # and only return 1 byte
 #if defined DEBUG && DEBUG >= VERBOSE_ALL
             ltime = time(NULL);
             timestamp = asctime(localtime(&ltime));
@@ -224,7 +224,7 @@ int CPulsar2Controller::readResponse(char *szRespBuffer, int nBufferLen)
             fflush(Logfile);
 #endif
             
-            nErr = BAD_CMD_RESPONSE;
+            // nErr = BAD_CMD_RESPONSE;
             break;
         }
         ulTotalBytesRead += ulBytesRead;
@@ -237,9 +237,12 @@ int CPulsar2Controller::readResponse(char *szRespBuffer, int nBufferLen)
         }
         
     } while (*pszBufPtr++ != '#' && ulTotalBytesRead < nBufferLen );
-    
-    if(ulTotalBytesRead)
-        *(pszBufPtr-1) = 0; //remove the #
+
+    if(!ulTotalBytesRead)   // we didn't even get 1 byte after MAX_TIMEOUT (250ms)
+        nErr = BAD_CMD_RESPONSE;
+
+    else if(ulTotalBytesRead>1)
+        *(pszBufPtr-1) = 0; //remove the last # so we don't have to parse it later as we don't need it
     
     return nErr;
 }
@@ -257,12 +260,11 @@ int CPulsar2Controller::toggleFormat()
 //
 {
     int nErr = OK;
-    char szResp[SERIAL_BUFFER_SIZE];
-    
+
     if(!m_bIsConnected)
         return ERR_NOLINK;
     
-    nErr = sendCommand("#:U#", szResp, SERIAL_BUFFER_SIZE);
+    nErr = sendCommand("#:U#");
     if(nErr)
         return nErr;
     

@@ -52,7 +52,7 @@
 
 #define LOG_BUFFER_SIZE 256
 #define SERIAL_BUFFER_SIZE 64
-#define MAX_TIMEOUT 1000        // 1000 ms
+#define MAX_TIMEOUT 250        // 1000 ms
 #define TIMEOUT_READ 1500
 
 #define N_OUT_MAXSIZE 40  // buffer for the UTC timecode in ISO8601 format
@@ -75,7 +75,7 @@ class CPulsar2Controller
         ~CPulsar2Controller(void);
     
             
-        bool        connect(const char *szPort);
+        int        connect(const char *szPort);
         void        disconnect(void);
         bool        isConnected(void) { return m_bIsConnected; }
         
@@ -127,7 +127,7 @@ class CPulsar2Controller
 
     protected:
 
-        int         sendCommand(const char *pszCmd, char *pszResult, int nResultMaxLen);
+        int         sendCommand(const char *pszCmd, char *pszResult = NULL, int nResultMaxLen = SERIAL_BUFFER_SIZE);
         int         readResponse(char *szRespBuffer, int nBufferLen);
         
         int         setDateAndTime();

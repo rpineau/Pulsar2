@@ -115,6 +115,7 @@ int	X2Mount::queryAbstraction(const char* pszName, void** ppVal)
 ////////////////////////////////////////////////////////////////////////////
 int	X2Mount::establishLink(void)
 {
+    int nErr;
     char szPort[DRIVER_MAX_STRING];
 
 	X2MutexLocker ml(GetMutex());
@@ -126,14 +127,14 @@ int	X2Mount::establishLink(void)
     
      // get serial port device name
     portNameOnToCharPtr(szPort,DRIVER_MAX_STRING);
-    
-    if(Pulsar2.connect(szPort))
+    nErr = Pulsar2.connect(szPort);
+    if(!nErr)
         {
         m_bLinked = true;
             if (iLoggingVerbosity >= VERBOSE_ESSENTIAL)
                 if (GetLogger())
                     GetLogger()->out((char *) "X2Mount::establishLink - connected OK");
-        return SB_OK;
+        return nErr;
         }
     else
         {
@@ -141,7 +142,7 @@ int	X2Mount::establishLink(void)
             if (iLoggingVerbosity >= VERBOSE_FAILURES)
                 if (GetLogger())
                     GetLogger()->out((char *) "X2Mount::establishLink - failed to connect");
-        return ERR_NOLINK;
+        return nErr;
         }
 }
 
