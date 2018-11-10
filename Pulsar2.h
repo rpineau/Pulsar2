@@ -127,7 +127,7 @@ class CPulsar2Controller
 
     protected:
 
-        int         sendCommand(const char *pszCmd, char *pszResult = NULL, int nResultMaxLen = SERIAL_BUFFER_SIZE);
+        int         sendCommand(const char *pszCmd, char *pszResult = NULL, int nResultMaxLen = SERIAL_BUFFER_SIZE, int nNbResponses = 1);
         int         readResponse(char *szRespBuffer, int nBufferLen);
         
         int         setDateAndTime();

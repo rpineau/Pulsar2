@@ -132,15 +132,17 @@ void CPulsar2Controller::disconnect(void)
 ////////////////////////////////////////////////////////////////////////////
 #pragma mark - Send and Receive
 //////////////////////////////////////////////////////////////////////////////
-int CPulsar2Controller::sendCommand(const char *pszCmd, char *pszResult, int nResultMaxLen)
+int CPulsar2Controller::sendCommand(const char *pszCmd, char *pszResult, int nResultMaxLen, int nNbResponses)
 //
 // Firmware Validity: all
 //
 {
     int nErr = OK;
+    int i = 0;
     char szResp[SERIAL_BUFFER_SIZE];
     unsigned long  ulBytesWrite;
- 
+    std::string sResult;
+
     m_pSerx->purgeTxRx();
     
 #if defined VERBOSE_DEBUG && VERBOSE_DEBUG >= 2
@@ -158,29 +160,34 @@ int CPulsar2Controller::sendCommand(const char *pszCmd, char *pszResult, int nRe
     
     if (!pszResult) // it's NULL so we don't expect a response
         return nErr;
-    
-    // read response
-    nErr = readResponse(szResp, SERIAL_BUFFER_SIZE);
-    if(nErr) {
+
+    for(i = 0; i<nNbResponses; i++) {
+        // read response
+        nErr = readResponse(szResp, SERIAL_BUFFER_SIZE);
+        if(nErr) {
+#if defined DEBUG && DEBUG >= VERBOSE_ALL
+            ltime = time(NULL);
+            timestamp = asctime(localtime(&ltime));
+            timestamp[strlen(timestamp) - 1] = 0;
+            fprintf(Logfile, "[%s] [CPulsar2Controller::sendCommand] ***** ERROR READING RESPONSE **** error = %d , response : %s\n", timestamp, nErr, szResp);
+            fflush(Logfile);
+#endif
+            return nErr;
+        }
 #if defined DEBUG && DEBUG >= VERBOSE_ALL
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CPulsar2Controller::sendCommand] ***** ERROR READING RESPONSE **** error = %d , response : %s\n", timestamp, nErr, szResp);
+        fprintf(Logfile, "[%s] [CPulsar2Controller::sendCommand] response : %s\n", timestamp, szResp);
         fflush(Logfile);
 #endif
-        return nErr;
+        if(i) {  // re-add the # if there is more than one in the response we expect, like RA#dec#
+            sResult += "#";
+        }
+        sResult += szResp;  // concatenate responses
     }
-#if defined DEBUG && DEBUG >= VERBOSE_ALL
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s] [CPulsar2Controller::sendCommand] response : %s\n", timestamp, szResp);
-    fflush(Logfile);
-#endif
-    
-    if(pszResult)
-        strncpy(pszResult, szResp, nResultMaxLen);
+
+    strncpy(pszResult, sResult.c_str(), nResultMaxLen);
 
     return nErr;
     
