@@ -115,7 +115,8 @@ int	X2Mount::queryAbstraction(const char* pszName, void** ppVal)
 ////////////////////////////////////////////////////////////////////////////
 int	X2Mount::establishLink(void)
 {
-    
+    char szPort[DRIVER_MAX_STRING];
+
 	X2MutexLocker ml(GetMutex());
 
     if (iLoggingVerbosity >= VERBOSE_ESSENTIAL)
@@ -123,7 +124,10 @@ int	X2Mount::establishLink(void)
             GetLogger()->out((char *) "X2Mount::establishLink");
 
     
-    if(Pulsar2.connect(serialName))
+     // get serial port device name
+    portNameOnToCharPtr(szPort,DRIVER_MAX_STRING);
+    
+    if(Pulsar2.connect(szPort))
         {
         m_bLinked = true;
             if (iLoggingVerbosity >= VERBOSE_ESSENTIAL)
@@ -179,7 +183,8 @@ bool X2Mount::isEstablishLinkAbortable(void) const
 
 void	X2Mount::driverInfoDetailedInfo(BasicStringInterface& str) const
 {
-	str = DISPLAY_NAME;
+
+    str = DISPLAY_NAME;
 }
 
 double	X2Mount::driverInfoVersion(void) const				
@@ -196,17 +201,20 @@ void X2Mount::deviceInfoNameShort(BasicStringInterface& str) const
 	str = "Pulsar2";
 }
 
+////////////////////////////////////////////////////////////////////////////
 void X2Mount::deviceInfoNameLong(BasicStringInterface& str) const
 {
 	str = "Pulsar2 Mount drive";
 
 }
 
+////////////////////////////////////////////////////////////////////////////
 void X2Mount::deviceInfoDetailedDescription(BasicStringInterface& str) const
 {
 	str = DISPLAY_NAME;
 }
 
+////////////////////////////////////////////////////////////////////////////
 void X2Mount::deviceInfoFirmwareVersion(BasicStringInterface& str)
 {
     if (iLoggingVerbosity >= VERBOSE_FUNCTION_TRACKING)
@@ -215,17 +223,19 @@ void X2Mount::deviceInfoFirmwareVersion(BasicStringInterface& str)
 
     if (m_bLinked) {
         X2MutexLocker ml(GetMutex());
+        
         char szFirmware[SERIAL_BUFFER_SIZE];
-        if(Pulsar2.getFirmware(szFirmware, SERIAL_BUFFER_SIZE))
+        if(Pulsar2.getFirmware(szFirmware, SERIAL_BUFFER_SIZE) != OK)  // note that getFirmware() is now of type int,
             str = szFirmware;
         else
             str = "Device Not Connected.";
     }
-    else
+    
+ else
         str = "Device Not Connected.";
 }
 
-
+////////////////////////////////////////////////////////////////////////////
 void X2Mount::deviceInfoModel(BasicStringInterface& str)
 {
 	str = "Pulsar2";
@@ -871,7 +881,7 @@ int    X2Mount::isCompletePark(bool& bComplete) const
     bool bIsParked;
     bool bIsParking;
 
-    // This bit throws an error: re;ated to the use of const in the definition.
+    // This bit throws an error: related to the use of const in the definition.
     // I don't know why it's there
 /*
     if (iLoggingVerbosity >= VERBOSE_FUNCTION_TRACKING)
@@ -1116,7 +1126,7 @@ void X2Mount::portName(BasicStringInterface& str) const
     char szPortName[DRIVER_MAX_STRING];
 
     portNameOnToCharPtr(szPortName, DRIVER_MAX_STRING);
-
+    
     str = szPortName;
 
 }

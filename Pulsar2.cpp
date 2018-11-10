@@ -66,13 +66,22 @@ bool CPulsar2Controller::connect(const char *szPort)
     int nErr = SB_OK;
 
     m_bIsConnected = true;
-    nErr = m_pSerx->open(szPort, 38400, SerXInterface::B_NOPARITY, "-DTR_CONTROL 1");
-    if(nErr) {
+    nErr = m_pSerx->open(szPort, 38400, SerXInterface::B_NOPARITY);
+    if(nErr != SB_OK) { // was if(nErr)
         m_bIsConnected = false;
-        return nErr;
+        return m_bIsConnected;
     }
+#if defined VERBOSE_DEBUG && VERBOSE_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CPulsar2Controller::Connect] Opened serial port OK\n", timestamp);
+    fflush(Logfile);
+#endif
 
-    // Validate that we are talking to an Pulsar2 by
+ /*
+    
+    // Validate that we are talking to a Pulsar2 by
     // getting the firmware version.
     // If this doesn't work
     // then abort and close our connection to the device
@@ -99,6 +108,7 @@ bool CPulsar2Controller::connect(const char *szPort)
     // set the Pulsar2 location to TSX location
     nErr = setLocation();
 
+*/
     
     return m_bIsConnected;
 }
@@ -130,7 +140,7 @@ int CPulsar2Controller::sendCommand(const char *pszCmd, char *pszResult, int nRe
     int nErr = OK;
     char szResp[SERIAL_BUFFER_SIZE];
     unsigned long  ulBytesWrite;
-    
+ 
     m_pSerx->purgeTxRx();
     
 #if defined VERBOSE_DEBUG && VERBOSE_DEBUG >= 2
@@ -170,8 +180,9 @@ int CPulsar2Controller::sendCommand(const char *pszCmd, char *pszResult, int nRe
 #endif
     
     if(pszResult)
-        strncpy(pszResult, &szResp[1], nResultMaxLen);
-    
+//        strncpy(pszResult, &szResp[1], nResultMaxLen);  // why are we skipping the first character? We always need it.
+    strncpy(pszResult, &szResp[0], nResultMaxLen);
+
     return nErr;
     
 }
@@ -417,33 +428,39 @@ int CPulsar2Controller::getTracking(int &iTrackingRate)
 
 //////////////////////////////////////////////////////////////////////////////
 // Get the firmware version
+int CPulsar2Controller::getFirmware(char *szFirmware, int nMaxStrSize)
 //
 // Response is:
 //      PULSAR Vx.xxx, 2008.10.10#
 //      PULSAR V4.03a   ,2010.12.01      #
 //
-//
 // Firmware Validity: all
 //
-
-int CPulsar2Controller::getFirmware(char *szFirmware, int nMaxStrSize)
 {
     int nErr = OK;
     char szResp[SERIAL_BUFFER_SIZE];
     
-    memset(szFirmware, nMaxStrSize, 0);
+    memset(szFirmware, 0, nMaxStrSize);
     if(!m_bIsConnected)
         return ERR_NOLINK;
-    
+     
     nErr = sendCommand("#:YV#", szResp, SERIAL_BUFFER_SIZE);
-    if(nErr)
+#if defined DEBUG && DEBUG >= VERBOSE_ALL
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CPulsar2Controller::GetFirmware] Response: %s\n", timestamp, szResp);
+    fflush(Logfile);
+#endif
+   if(nErr != OK)
         return nErr;
     
     // Okay, we got something. Is it a valid looking firmware identifier?
     if (memcmp("PULSAR V", szResp, 8) != 0)
-        return false;
+        return ERR_CMDFAILED;
     
     memcpy(szFirmware, szResp+7, 6);
+ 
     return nErr;
 }
 

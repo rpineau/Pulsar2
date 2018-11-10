@@ -82,19 +82,19 @@ class CPulsar2Controller
         ////////////////////////////////////////////////////////////////
         // Commands to and from device
         
-        int         stopSlew(void);                                        // not tested
-        int         getRADec(double &dRA, double &dDec);                // Works
+        int         stopSlew(void);                                         // not tested
+        int         getRADec(double &dRA, double &dDec);                // not tested
         int         toggleFormat();
 
         int         setRefractionCorrection(bool bEnabled);
         
-        int         syncRADec(const double &dRA, const double &dDec);   // Works
+        int         syncRADec(const double &dRA, const double &dDec);   // not tested
         int         getSideOfPier(int &nPierSide);                      // not tested
         int         getRefractionCorrection(bool &bRefractionNeeded);
-        int         getFirmware(char *szFirmware, int nMaxStrSize);     // Works
-        
-        int         startSlew(const double& dRa, const double& dDec, int &nSlewStatus);   // Works
-        int         slewStatus(bool &bIsSlewing);                                   // Works
+        int         getFirmware(char *szFirmware, int nMaxStrSize);     // not tested
+
+        int         startSlew(const double& dRa, const double& dDec, int &nSlewStatus);   // not tested
+        int         slewStatus(bool &bIsSlewing);                                   // not tested
         
         int         stopMoving(int iDir);                                   // not tested
         int         startMove(int iDir, int iSpeedIndex);               // not tested
@@ -147,9 +147,10 @@ class CPulsar2Controller
         SleeperInterface    *pSleeper;        // added by Rodolphe in iEQ30
         TheSkyXFacadeForDriversInterface    *m_pTsx;
 
-        unsigned char       szFirmware[9];
+        char       szFirmware[9];
         int                 iMajorFirmwareVersion; // added by CRF 4 Nov 2018, to be used to distinguish commands in v. 5.xx
         char                m_szLogMessage[LOG_BUFFER_SIZE];
+        
 
 // This is the previous version. This seems to be left over from the iEQ30 driver
 //        const char m_aszSlewRateNames[NB_SLEW_SPEEDS][SLEW_NAME_LENGHT] = { "Sidereal", "2x Sidereal", "8x Sidereal", "16x Sidereal",
