@@ -41,6 +41,7 @@
 #define VERBOSE_RESULTS             2
 #define VERBOSE_FUNCTION_TRACKING   3
 #define VERBOSE_ALL                 4
+#define VERBOSE_CRAZY               5
 
 #define PULSAR2_DEBUG VERBOSE_ALL
 
@@ -155,9 +156,6 @@ class CPulsar2Controller
         int         iMajorFirmwareVersion; // added by CRF 4 Nov 2018, to be used to distinguish commands in v. 5.xx
         char        m_szLogMessage[LOG_BUFFER_SIZE];
 
-// This is the previous version. This seems to be left over from the iEQ30 driver
-//        const char m_aszSlewRateNames[NB_SLEW_SPEEDS][SLEW_NAME_LENGHT] = { "Sidereal", "2x Sidereal", "8x Sidereal", "16x Sidereal",
-//            "64x Sidereal", "128x Sidereal", "256x Sidereal", "512x Sidereal"};
         const char m_aszSlewRateNames[NB_SLEW_SPEEDS][SLEW_NAME_LENGHT] = {"Guide", "Centre", "Find", "Slew"};
 
 #ifdef PULSAR2_DEBUG

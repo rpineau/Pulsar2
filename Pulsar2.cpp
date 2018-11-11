@@ -174,6 +174,8 @@ int CPulsar2Controller::sendCommand(const char *pszCmd, char *pszResult, int nRe
             fprintf(Logfile, "[%s] [CPulsar2Controller::sendCommand] ***** ERROR READING RESPONSE **** error = %d , response : %s\n", timestamp, nErr, szResp);
             fflush(Logfile);
 #endif
+            // copy the partial response to pszResult
+            strncpy(pszResult, szResp, nResultMaxLen);
             return nErr;
         }
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
@@ -240,8 +242,8 @@ int CPulsar2Controller::readResponse(char *szRespBuffer, int nBufferLen)
             break;
         }
         ulTotalBytesRead += ulBytesRead;
-/* -- this has helped solve comms questions, but now leads to lots of output, so it's commented out pending future use
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+// -- this has helped solve comms questions, but now leads to lots of output, so it's disabled pending future use (set PULSAR2_DEBUG to VERBOSE_CRAZY in Pulsar2.h)
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_CRAZY
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -249,7 +251,6 @@ int CPulsar2Controller::readResponse(char *szRespBuffer, int nBufferLen)
         fprintf(Logfile, "[%s] [CPulsar2Controller::readResponse] ulTotalBytesRead = %lu\n", timestamp, ulTotalBytesRead);
         fflush(Logfile);
 #endif
-*/
         // special case response
         if(*pszBufPtr == NACK)
             return NACK;
