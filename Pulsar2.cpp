@@ -218,6 +218,8 @@ int CPulsar2Controller::readResponse(char *szRespBuffer, int nBufferLen)
             timestamp = asctime(localtime(&ltime));
             timestamp[strlen(timestamp) - 1] = 0;
             fprintf(Logfile, "[%s] [CPulsar2Controller::readResponse] readFile error\n", timestamp);
+            fprintf(Logfile, "[%s] [CPulsar2Controller::readResponse] szRespBuffer = %s\n", timestamp, szRespBuffer);
+            fprintf(Logfile, "[%s] [CPulsar2Controller::readResponse] ulTotalBytesRead = %lu\n", timestamp, ulTotalBytesRead);
             fflush(Logfile);
 #endif
             return nErr;
@@ -230,21 +232,28 @@ int CPulsar2Controller::readResponse(char *szRespBuffer, int nBufferLen)
             timestamp = asctime(localtime(&ltime));
             timestamp[strlen(timestamp) - 1] = 0;
             fprintf(Logfile, "[%s] [CPulsar2Controller::readResponse] Timeout while waiting for response from controller\n", timestamp);
+            fprintf(Logfile, "[%s] [CPulsar2Controller::readResponse] szRespBuffer = %s\n", timestamp, szRespBuffer);
+            fprintf(Logfile, "[%s] [CPulsar2Controller::readResponse] ulTotalBytesRead = %lu\n", timestamp, ulTotalBytesRead);
             fflush(Logfile);
 #endif
-            
             // nErr = BAD_CMD_RESPONSE;
             break;
         }
         ulTotalBytesRead += ulBytesRead;
-        
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::readResponse] szRespBuffer = %s\n", timestamp, szRespBuffer);
+        fprintf(Logfile, "[%s] [CPulsar2Controller::readResponse] ulTotalBytesRead = %lu\n", timestamp, ulTotalBytesRead);
+        fflush(Logfile);
+#endif
         // special case response
         if(*pszBufPtr == NACK)
             return NACK;
         if(*pszBufPtr == ACK) {
             return OK;
         }
-        
     } while (*pszBufPtr++ != '#' && ulTotalBytesRead < nBufferLen );
 
     if(!ulTotalBytesRead)   // we didn't even get 1 byte after MAX_TIMEOUT (250ms)
