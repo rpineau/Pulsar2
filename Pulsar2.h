@@ -54,8 +54,8 @@
 
 #define LOG_BUFFER_SIZE 256
 #define SERIAL_BUFFER_SIZE 64
-#define MAX_TIMEOUT 500        // 500 ms
-#define TIMEOUT_READ 1500
+#define MAX_TIMEOUT 1000        // 1000 ms
+// #define TIMEOUT_READ 1500
 
 #define N_OUT_MAXSIZE 40  // buffer for the UTC timecode in ISO8601 format
 
@@ -95,7 +95,7 @@ class CPulsar2Controller
         int         getRefractionCorrection(bool &bRefractionNeeded);
         int         getFirmware(char *szFirmware, int nMaxStrSize);     // not tested
 
-        int         startSlew(const double& dRa, const double& dDec, int &nSlewStatus);   // not tested
+        int         startSlew(const double& dRa, const double& dDec);   // not tested
         int         slewStatus(bool &bIsSlewing);                                   // not tested
         
         int         stopMoving(int iDir);                                   // not tested
@@ -107,7 +107,7 @@ class CPulsar2Controller
 
         int         park(const double& dAz, const double& dAlt);                                         // not tested
         int         unPark();                                       // not tested
-        int         parkStatus(bool &isParked, bool &isParking);                                // not tested
+        int         parkStatus(bool &isParked);                                // not tested
 
         ////////////////////////////////////////////////////////////////
 

@@ -43,7 +43,7 @@
 
 enum DEBUG_LEVEL {NONE = 0, METHOD, VERBOSE};
 
-#define PULSAR2_DEBUG VERBOSE
+// #define PULSAR2_DEBUG VERBOSE  // also defined in Pulsar2.h
 
 #if defined(SB_WIN_BUILD)
 #define DEF_PORT_NAME                    "COM1"

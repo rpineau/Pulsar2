@@ -211,7 +211,7 @@ int CPulsar2Controller::readResponse(char *szRespBuffer, int nBufferLen)
     pszBufPtr = szRespBuffer;
     
     do {
-        nErr = m_pSerx->readFile(pszBufPtr, 1, ulBytesRead, MAX_TIMEOUT);
+        nErr = m_pSerx->readFile(pszBufPtr, 1, ulBytesRead, MAX_TIMEOUT);  // NB: there is also a timeout called TIMEOUT_READ
         if(nErr) {
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
             ltime = time(NULL);
@@ -236,10 +236,11 @@ int CPulsar2Controller::readResponse(char *szRespBuffer, int nBufferLen)
             fprintf(Logfile, "[%s] [CPulsar2Controller::readResponse] ulTotalBytesRead = %lu\n", timestamp, ulTotalBytesRead);
             fflush(Logfile);
 #endif
-            // nErr = BAD_CMD_RESPONSE;
+            // nErr = ERR_RXTIMEOUT;
             break;
         }
         ulTotalBytesRead += ulBytesRead;
+/* -- this has helped solve comms questions, but now leads to lots of output, so it's commented out pending future use
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
@@ -248,6 +249,7 @@ int CPulsar2Controller::readResponse(char *szRespBuffer, int nBufferLen)
         fprintf(Logfile, "[%s] [CPulsar2Controller::readResponse] ulTotalBytesRead = %lu\n", timestamp, ulTotalBytesRead);
         fflush(Logfile);
 #endif
+*/
         // special case response
         if(*pszBufPtr == NACK)
             return NACK;
@@ -256,8 +258,19 @@ int CPulsar2Controller::readResponse(char *szRespBuffer, int nBufferLen)
         }
     } while (*pszBufPtr++ != '#' && ulTotalBytesRead < nBufferLen );
 
+// This is a summary, unnecessary if the commented-out part above is used
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CPulsar2Controller::readResponse] szRespBuffer = %s\n", timestamp, szRespBuffer);
+    fprintf(Logfile, "[%s] [CPulsar2Controller::readResponse] ulTotalBytesRead = %lu\n", timestamp, ulTotalBytesRead);
+    fflush(Logfile);
+#endif
+
+    
     if(!ulTotalBytesRead)   // we didn't even get 1 byte after MAX_TIMEOUT (250ms)
-        nErr = BAD_CMD_RESPONSE;
+        nErr = ERR_RXTIMEOUT;
 
     else if(ulTotalBytesRead>1)
         *(pszBufPtr-1) = 0; //remove the last # so we don't have to parse it later as we don't need it
@@ -344,7 +357,7 @@ int CPulsar2Controller::getRADec(double &dRA, double &dDec)
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s] [CPulsar2Controller::GetRADec] dRA = %3.2f\n", timestamp, dRA);
+    fprintf(Logfile, "[%s] [CPulsar2Controller::GetRADec] dRA = %5.4f\n", timestamp, dRA);
     fflush(Logfile);
 #endif
     
@@ -386,7 +399,7 @@ int CPulsar2Controller::getRADec(double &dRA, double &dDec)
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s] [CPulsar2Controller::GetRADec] dDec = %3.2f\n", timestamp, dDec);
+    fprintf(Logfile, "[%s] [CPulsar2Controller::GetRADec] dDec = %5.4f\n", timestamp, dDec);
     fflush(Logfile);
 #endif
     
@@ -395,6 +408,7 @@ int CPulsar2Controller::getRADec(double &dRA, double &dDec)
 
 
 //////////////////////////////////////////////////////////////////////////////
+int CPulsar2Controller::getTracking(int &iTrackingRate)
 // Function to get tracking rate
 // Where iTrackingRate is:
 //      0 = stop
@@ -408,8 +422,6 @@ int CPulsar2Controller::getRADec(double &dRA, double &dDec)
 //
 // Firmware Validity: >= 4
 //
-
-int CPulsar2Controller::getTracking(int &iTrackingRate)
 {
     int nErr = OK;
     char szResp[SERIAL_BUFFER_SIZE];
@@ -429,16 +441,26 @@ int CPulsar2Controller::getTracking(int &iTrackingRate)
         return nErr;
     }
     
-    iTrackingRate = int(szResp[0]);
+    iTrackingRate = atoi(&szResp[0]);
     
-    if (iTrackingRate >=4) {
+    if (iTrackingRate < 4) {
+      // standard tracking rate (stopped, sidereal, lunar, solar)
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::getTracking] Tracking rate %d : %s\n", timestamp, iTrackingRate, szResp);
+        fflush(Logfile);
+#endif
+   }
+   else {
         // user tracking rate, we should get the actual values
         // TODO : read user rate with #:YGZx#, x=(iTrackingRate-4)
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CPulsar2Controller::getTracking] Custorm user tracking rate %d : %s\n", timestamp, iTrackingRate-4, szResp);
+        fprintf(Logfile, "[%s] [CPulsar2Controller::getTracking] Custom user tracking rate %d : %s\n", timestamp, iTrackingRate-4, szResp);
         fflush(Logfile);
 #endif
     }
@@ -479,12 +501,13 @@ int CPulsar2Controller::getFirmware(char *szFirmware, int nMaxStrSize)
     if (memcmp("PULSAR V", szResp, 8) != 0)
         return ERR_CMDFAILED;
     
-    strncpy(szFirmware, szResp+7, nMaxStrSize); // copy the whole string, including the date
- 
+//    strncpy(szFirmware, szResp+7, nMaxStrSize); // copy the whole string, including the date
+    strncpy(szFirmware, szResp+7, 6); szFirmware[6] = 0;  // or without the date
+    
+    iMajorFirmwareVersion = atoi(&szFirmware[1]);  // expected string is V4.40a, for example
+
     return nErr;
 }
-
-
 
 //////////////////////////////////////////////////////////////////////////////
 // Get the side of the pier for the OTA
@@ -763,15 +786,13 @@ int CPulsar2Controller::setLocation()
 
 
 //////////////////////////////////////////////////////////////////////////////
+int CPulsar2Controller::setRAdec(const double &dRA, const double &dDec)
 // Function used to set the commanded RA and dec
 //      1. define commanded RA
 //      2. define commanded Dec
-// Returns true if successful, false if not
 //
 // Firmware Validity: >= 4
 //
-
-int CPulsar2Controller::setRAdec(const double &dRA, const double &dDec)
 {
     int nErr = OK;
     char szCommand[SERIAL_BUFFER_SIZE];
@@ -797,7 +818,7 @@ int CPulsar2Controller::setRAdec(const double &dRA, const double &dDec)
     iRAmm = (int)floor((dRA-(double)iRAhh)*60.0);
     iRAss = (int)floor((((dRA-(double)iRAhh)*60.0)-(double)iRAmm)*60.0);
     
-    snprintf(szCommand, SERIAL_BUFFER_SIZE, ":Sr %02i:%02i:%02i#", iRAhh, iRAmm, iRAss);
+    snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:Sr %02i:%02i:%02i#", iRAhh, iRAmm, iRAss);
     
     nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE);
     if(nErr) {
@@ -835,7 +856,7 @@ int CPulsar2Controller::setRAdec(const double &dRA, const double &dDec)
     iDecmm = (int)floor((dPosDec-(double)iDechh)*60.0);
     iDecss = (int)floor((((dPosDec-(double)iDechh)*60.0)-(double)iDecmm)*60.0);
     
-    snprintf(szCommand, SERIAL_BUFFER_SIZE, ":Sd %1c%02i*%02i:%02i#", cDecs, iDechh, iDecmm, iDecss);
+    snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:Sd %1c%02i*%02i:%02i#", cDecs, iDechh, iDecmm, iDecss);
     nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE);
     if(nErr) {
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
@@ -1057,16 +1078,14 @@ int CPulsar2Controller::syncRADec(const double &dRa, const double &dDec)
 //
 
 //////////////////////////////////////////////////////////////////////////////
-// returns "1" if command accepted, "0" if the object is below the horizon
 //   three steps are needed:
 //      1. define commanded RA
 //      2. define commanded Dec
 //      3. command the movement
 //
-//
 // Firmware Validity: >= 4
 //
-int CPulsar2Controller::startSlew(const double& dRa, const double& dDec, int &nSlewStatus)
+int CPulsar2Controller::startSlew(const double& dRa, const double& dDec)
 {
     int nErr = OK;
     char szResp[SERIAL_BUFFER_SIZE];
@@ -1114,13 +1133,9 @@ int CPulsar2Controller::startSlew(const double& dRa, const double& dDec, int &nS
     // command returns 0# if the slew is OK, and #1 if there's a problem (typically, target below horizon)
     // (note that this was the wrong way around in the previous version)
     if (szResp[0] == '0')
-        nSlewStatus = 1; // accepted
-    else if (szResp[0] == '1')
-        nSlewStatus = 0;  // below horizon
-    else {
-        nSlewStatus = -1;  // error
-        nErr = ERR_CMDFAILED;
-    }
+        return SB_OK; // accepted
+    else
+        return ERR_LX200DESTBELOWHORIZ;  // below horizon
     
     return nErr;
 }
@@ -1171,15 +1186,17 @@ int CPulsar2Controller::stopSlew(void)
 //
 {
     int nErr = OK;
-    char szResp[SERIAL_BUFFER_SIZE];
+//    char szResp[SERIAL_BUFFER_SIZE];
     
     if(!m_bIsConnected)
         return ERR_NOLINK;
     
-    nErr = sendCommand(":Q#", szResp, SERIAL_BUFFER_SIZE);
+    nErr = sendCommand(":Q#");
     if(nErr)
         return nErr;
     
+/* -- not sure why this was here. No response is expected !
+ 
     // if result isn't 1 we're in trouble. Try again,
     // but only once
     if (szResp[0] != '1') {
@@ -1196,6 +1213,7 @@ int CPulsar2Controller::stopSlew(void)
 #endif
         }
     }
+*/
     
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
     ltime = time(NULL);
@@ -1316,7 +1334,7 @@ int CPulsar2Controller::startMove(int iDir, int iSpeedIndex)
 
     
     // command the selected speed
-    nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE);
+    nErr = sendCommand(szCommand);
     if(nErr) {
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
         ltime = time(NULL);
@@ -1337,7 +1355,7 @@ int CPulsar2Controller::startMove(int iDir, int iSpeedIndex)
         case 3: snprintf(szCommand, SERIAL_BUFFER_SIZE, ":Mw#");   break; // West
     }
     
-    nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE);
+    nErr = sendCommand(szCommand);
     if(nErr) {
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
         ltime = time(NULL);
@@ -1382,7 +1400,7 @@ int CPulsar2Controller::stopMoving(int iDir)
         case 3: snprintf(szCommand, SERIAL_BUFFER_SIZE, ":Qw#");   break; // West
     }
     
-    nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE);
+    nErr = sendCommand(szCommand);
     if(nErr) {
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
         ltime = time(NULL);
@@ -1477,7 +1495,7 @@ int CPulsar2Controller::park(const double& dAz, const double& dAlt)
 //
 // Firmware Validity: >= 4
 //
-int CPulsar2Controller::parkStatus(bool &isParked, bool &isParking)
+int CPulsar2Controller::parkStatus(bool &isParked)
 {
     
     int nErr = OK;
@@ -1504,6 +1522,7 @@ int CPulsar2Controller::parkStatus(bool &isParked, bool &isParking)
     isParked = m_bIsParked;
     
     
+/*  -- this part seems rather pointless, as the rsult is not used later
     // then check IsParking
     nErr = sendCommand("#:YGj#", szResp, SERIAL_BUFFER_SIZE);    // IsParking ?
     if(nErr) {
@@ -1516,10 +1535,10 @@ int CPulsar2Controller::parkStatus(bool &isParked, bool &isParking)
 #endif
         return nErr;
     }
-    
     // Response is 1 if mount is parking, 0 if not
     isParking = szResp[0]=='1'?true:false;
-    
+ */
+
     return nErr;
 }
 
@@ -1581,7 +1600,7 @@ double CPulsar2Controller::raStringToDouble(char* cRaString)
     double dMinutes;
     double dSeconds;
     
-    //  raString is in the form "HH:MM:SS#"
+    //  raString is in the form "HH:MM:SS"
     
     // first get the hours
     sscanf((char *) cRaString, "%2lf", &dHours);
@@ -1609,8 +1628,8 @@ double CPulsar2Controller::decStringToDouble(char* cDecString)
     double dSeconds;
     double dSign; // = +1.00 or -1.00
     
-    //  decString is in the form "sDD*MM:SS#"
-    //            or in the form "sDD*MM'SS#"
+    //  decString is in the form "sDD*MM:SS"
+    //            or in the form "sDD*MM'SS"
     
     // first get the sign
     if (cDecString[0] == 0x2d) // 0x2d = "-"

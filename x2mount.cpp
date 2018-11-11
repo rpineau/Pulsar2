@@ -226,14 +226,14 @@ void X2Mount::deviceInfoFirmwareVersion(BasicStringInterface& str)
         X2MutexLocker ml(GetMutex());
         
         char szFirmware[SERIAL_BUFFER_SIZE];
-        if(Pulsar2.getFirmware(szFirmware, SERIAL_BUFFER_SIZE) != OK)  // note that getFirmware() is now of type int,
+        if(Pulsar2.getFirmware((char *)szFirmware, SERIAL_BUFFER_SIZE) == OK)
             str = szFirmware;
         else
-            str = "Device Not Connected.";
+            str = "Unknown";
     }
     
  else
-        str = "Device Not Connected.";
+        str = "No Connection";
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -471,7 +471,6 @@ int X2Mount::startSlewTo(const double& dRa, const double& dDec)
 {
     int nErr = SB_OK;
     bool bIsSlewing;
-    int nSlewResult;
     char cLogMessage[LOG_BUFFER_SIZE];
     
     if (iLoggingVerbosity >= VERBOSE_FUNCTION_TRACKING)
@@ -490,28 +489,19 @@ int X2Mount::startSlewTo(const double& dRa, const double& dDec)
             GetLogger()->out(cLogMessage);
         }
 
-
+    // check if there's already a slew going on
     nErr = Pulsar2.slewStatus(bIsSlewing);
     if(nErr)
         return nErr;
 
     if (!bIsSlewing) {
-        nErr = Pulsar2.startSlew(dRa, dDec, nSlewResult);
+        nErr = Pulsar2.startSlew(dRa, dDec);
         if(nErr)
             return nErr;
     }
     else
         return ERR_COMMANDINPROGRESS;
     
-// This bit was commented out before, probably due to the wrong interpreatation of
-//  the Pulsar2 response in the called method startSlew()
-    if (nSlewResult == 1)
-        nErr = SB_OK; // accepted
-    else if (nSlewResult == 0)
-        nErr = ERR_LX200DESTBELOWHORIZ;  // below horizon (but with LX200 message)
-    else
-        nErr = ERR_CMDFAILED;  // error
-
     return nErr;
 }
 
@@ -766,6 +756,8 @@ int X2Mount::trackingRates( bool& bTrackingOn, double& dRaRateArcSecPerSec, doub
     true means tracking is at sidereal rate regardless of other parameters
     false means tracking rate is as given in the next 2 parameters. It does not mean that tracking is off.
  
+    This may no longer be true, with X2 v21
+ 
  - dRaRateArcSecPerSec
  
     has no real effect: if bTrackingOn = true the rate is always reported to be sidereal;
@@ -778,7 +770,9 @@ int X2Mount::trackingRates( bool& bTrackingOn, double& dRaRateArcSecPerSec, doub
  
  Special cases:
             
-    bTrackingOn = false; dRaRateArcSecPerSec = 15.041...; dDecRateArcSecPerSec = 0.0 ... means "Tracking Off".
+    bTrackingOn = false; dRaRateArcSecPerSec = 15.0410681 +- 0.00001; dDecRateArcSecPerSec = 0 +- 0.00001 means "Tracking Off".
+ 
+    If the mount can set tracking rate but not read it, return bTrackingOn=false and return both rates as -1000.0
 */
     int nErr = SB_OK;
     int iTrackingRate;
@@ -844,7 +838,6 @@ bool X2Mount::isParked(void)
     int nErr = SB_OK;
 
     bool bIsParked;
-    bool bIsParking;
     
    if (iLoggingVerbosity >= VERBOSE_FUNCTION_TRACKING)
         if (GetLogger())
@@ -855,7 +848,7 @@ bool X2Mount::isParked(void)
 
     X2MutexLocker ml(GetMutex());
 
-   nErr = Pulsar2.parkStatus(bIsParked, bIsParking);
+   nErr = Pulsar2.parkStatus(bIsParked);
 
     return bIsParked;
 }
@@ -870,27 +863,14 @@ int    X2Mount::isCompletePark(bool& bComplete) const
     int nErr = SB_OK;
     
     bool bIsParked;
-    bool bIsParking;
-
-    // This bit throws an error: related to the use of const in the definition.
-    // I don't know why it's there
-/*
-    if (iLoggingVerbosity >= VERBOSE_FUNCTION_TRACKING)
-        if (GetLogger())
-            GetLogger()->out((char *) "X2Mount::isCompletePark");
-*/
     
     if(!m_bLinked)
         return ERR_NOLINK;
     
     X2Mount* pMe = (X2Mount*)this;
     X2MutexLocker ml(pMe->GetMutex());
-    nErr = pMe->Pulsar2.parkStatus(bIsParked, bIsParking);
+    nErr = pMe->Pulsar2.parkStatus(bIsParked);
 
-    if (bIsParking){
-        bComplete = false;
-        return nErr;
-    }
     if (bIsParked) {
         bComplete = true;
         return nErr;
@@ -914,7 +894,7 @@ int	X2Mount::startPark(const double& dAz, const double& dAlt)
 
 	X2MutexLocker ml(GetMutex());
     
-    if (Pulsar2.park(dAz, dAlt))
+    if (Pulsar2.park(dAz, dAlt) == SB_OK)
         return SB_OK;
     else
         return ERR_CMDFAILED;
@@ -965,7 +945,6 @@ int	X2Mount::isCompleteUnpark(bool& bComplete) const
 {
     int nErr = SB_OK;
     bool bIsParked;
-    bool bIsParking;
 
     // This bit throws an error: related to the use of const in the definition.
     // I don't know why it's there
@@ -984,14 +963,10 @@ int	X2Mount::isCompleteUnpark(bool& bComplete) const
     X2MutexLocker ml(pMe->GetMutex());
 
     // check park status
-    nErr = pMe->Pulsar2.parkStatus(bIsParked, bIsParking);
+    nErr = pMe->Pulsar2.parkStatus(bIsParked);
     if(nErr)
         return nErr;
 
-    if (bIsParking){
-        bComplete = false;
-        return nErr;
-    }
     if (bIsParked) {
         bComplete = false;
         return nErr;
