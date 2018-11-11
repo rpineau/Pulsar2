@@ -626,7 +626,6 @@ int X2Mount::rateCountOpenLoopMove(void) const
 // Return the number (count) of avaiable moves.
 {
     X2Mount* pMe = (X2Mount*)this;
-    X2MutexLocker ml(pMe->GetMutex());
     return pMe->Pulsar2.getNbSlewRates();
 }
 
@@ -886,7 +885,7 @@ int    X2Mount::isCompletePark(bool& bComplete) const
     
     X2Mount* pMe = (X2Mount*)this;
     X2MutexLocker ml(pMe->GetMutex());
-   nErr = pMe->Pulsar2.parkStatus(bIsParked, bIsParking);
+    nErr = pMe->Pulsar2.parkStatus(bIsParked, bIsParking);
 
     if (bIsParking){
         bComplete = false;
@@ -1062,7 +1061,9 @@ int X2Mount::execModalSettingsDialog(void)
             
     
 //    dx->setPropertyInt("horizontalSlider_Verbosity", "value", iLoggingVerbosity);
-    
+
+    X2MutexLocker ml(GetMutex());
+
 	//Display the user interface
 	if((nErr = ui->exec(bPressedOK)))
 		return nErr;

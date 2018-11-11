@@ -79,8 +79,7 @@ int CPulsar2Controller::connect(const char *szPort)
     fflush(Logfile);
 #endif
 
- /*
-    
+
     // Validate that we are talking to a Pulsar2 by
     // getting the firmware version.
     // If this doesn't work
@@ -99,7 +98,10 @@ int CPulsar2Controller::connect(const char *szPort)
         m_bIsConnected = false;
      }
     
-    // Now that we are connected, switch the refraction correction off
+
+    /*
+
+     // Now that we are connected, switch the refraction correction off
     nErr = setRefractionCorrection(false);
     
     // set the Pulsar2 time to TSX time
