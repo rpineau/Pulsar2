@@ -418,7 +418,6 @@ int CPulsar2Controller::getTracking(int &iTrackingRate)
 //      4 = user1
 //      5 = user2
 //      6 = user3
-// Returns OK if successful, ERR_CMDFAILED if not
 //
 // Firmware Validity: >= 4
 //
@@ -465,7 +464,7 @@ int CPulsar2Controller::getTracking(int &iTrackingRate)
 #endif
     }
     
-    return true;
+    return nErr;
 }
 
 //////////////////////////////////////////////////////////////////////////////

@@ -569,7 +569,7 @@ int X2Mount::startOpenLoopMove(const MountDriverInterface::MoveDir& Dir, const i
     // note the commanded direction
     currentMoveDir = Dir;
 
-    if (Pulsar2.startMove(int(Dir), nRateIndex))
+    if (Pulsar2.startMove(int(Dir), nRateIndex) == OK)
         return SB_OK;
     else
         return ERR_CMDFAILED;
@@ -670,7 +670,13 @@ int X2Mount::setTrackingRates( const bool& bTrackingOn, const bool& bIgnoreRates
  for sidereal tracking this is 0.0;
  for tracking off it is also 0.0;
  for both Lunar and Solar tracking this will be non-zero but small, as both the Moon and Earth have orbital planes inclined to the Earth's equator;
-*/
+
+ Firmware validity:
+ 
+ rates off, sidereal, lunar and solar: 4.xx
+ rates off, sidereal, lunar, solar, user1, user2, user3: 5.xx -- these extensions to be implemented later (probably as set immediate rate)
+ 
+ */
     int nErr;
     char szLogMessage[LOG_BUFFER_SIZE];
 
@@ -795,31 +801,46 @@ int X2Mount::trackingRates( bool& bTrackingOn, double& dRaRateArcSecPerSec, doub
             bTrackingOn = false;
             dRaRateArcSecPerSec = 15.0410681;
             dDecRateArcSecPerSec = 0.0;
+            if (iLoggingVerbosity >= VERBOSE_FUNCTION_TRACKING)
+                if (GetLogger())
+                    GetLogger()->out((char *) "X2Mount::trackingRates: response is STOPPED");
             break;
             
         case SIDEREAL:
             bTrackingOn = true;
             dRaRateArcSecPerSec = 0.0;
             dDecRateArcSecPerSec = 0.0;
+            if (iLoggingVerbosity >= VERBOSE_FUNCTION_TRACKING)
+                if (GetLogger())
+                    GetLogger()->out((char *) "X2Mount::trackingRates: response is SIDEREAL");
             break;
 
         case LUNAR:
             bTrackingOn = true;
             dRaRateArcSecPerSec = 0.5490149;
             dDecRateArcSecPerSec = 0.0;
+            if (iLoggingVerbosity >= VERBOSE_FUNCTION_TRACKING)
+                if (GetLogger())
+                    GetLogger()->out((char *) "X2Mount::trackingRates: response is LUNAR");
             break;
 
         case SOLAR:
             bTrackingOn = true;
             dRaRateArcSecPerSec = 0.0410681;
             dDecRateArcSecPerSec = 0.0;
-            break;
+            if (iLoggingVerbosity >= VERBOSE_FUNCTION_TRACKING)
+                if (GetLogger())
+                    GetLogger()->out((char *) "X2Mount::trackingRates: response is SOLAR");
+           break;
             
         default:
             bTrackingOn = false;
             dRaRateArcSecPerSec = 15.0410681;
             dDecRateArcSecPerSec = 0.0;
-            break;
+            if (iLoggingVerbosity >= VERBOSE_FUNCTION_TRACKING)
+                if (GetLogger())
+                    GetLogger()->out((char *) "X2Mount::trackingRates: response is default (STOPPED)");
+           break;
     }
     
     return nErr;
