@@ -449,10 +449,10 @@ int CPulsar2Controller::getFirmware(char *szFirmware, int nMaxStrSize)
     int nErr = OK;
     char szResp[SERIAL_BUFFER_SIZE];
     
-    memset(szFirmware, 0, nMaxStrSize);
     if(!m_bIsConnected)
         return ERR_NOLINK;
      
+    memset(szFirmware, 0, nMaxStrSize);
     nErr = sendCommand("#:YV#", szResp, SERIAL_BUFFER_SIZE);
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
     ltime = time(NULL);
@@ -468,7 +468,7 @@ int CPulsar2Controller::getFirmware(char *szFirmware, int nMaxStrSize)
     if (memcmp("PULSAR V", szResp, 8) != 0)
         return ERR_CMDFAILED;
     
-    memcpy(szFirmware, szResp+7, 6);
+    strncpy(szFirmware, szResp+7, nMaxStrSize); // copy the whole string, including the date
  
     return nErr;
 }
