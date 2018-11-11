@@ -54,7 +54,7 @@
 
 #define LOG_BUFFER_SIZE 256
 #define SERIAL_BUFFER_SIZE 64
-#define MAX_TIMEOUT 250        // 1000 ms
+#define MAX_TIMEOUT 500        // 500 ms
 #define TIMEOUT_READ 1500
 
 #define N_OUT_MAXSIZE 40  // buffer for the UTC timecode in ISO8601 format
@@ -62,7 +62,7 @@
 #define ACK  0x06
 #define NACK 0x15
 
-#define NB_SLEW_SPEEDS      4  // was 8 (I think from iEQ30 driver). There are 4 (Guide, Centre, Find, Slew)
+#define NB_SLEW_SPEEDS      4
 #define SLEW_NAME_LENGHT    32
 
 enum PULSAR2_Errors    {OK = 0, NOT_CONNECTED, ND_CANT_CONNECT, BAD_CMD_RESPONSE, COMMAND_FAILED};
