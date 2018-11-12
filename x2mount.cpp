@@ -732,7 +732,8 @@ int X2Mount::siderealTrackingOn()   // added by CRF 3 Nov 2018
 {
     int nErr;
     nErr = SB_OK;
- 
+
+    X2MutexLocker ml(GetMutex());
     nErr = Pulsar2.setTrackingRate(SIDEREAL);
 
     return nErr;
@@ -745,7 +746,8 @@ int X2Mount::trackingOff()   // added by CRF 3 Nov 2018
 {
     int nErr;
     nErr = SB_OK;
-    
+
+    X2MutexLocker ml(GetMutex());
     nErr = Pulsar2.setTrackingRate(STOPPED);
 
     return nErr;

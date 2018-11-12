@@ -136,8 +136,8 @@ class CPulsar2Controller
 
     protected:
 
-        int         sendCommand(const char *pszCmd, char *pszResult = NULL, int nResultMaxLen = SERIAL_BUFFER_SIZE, int nNbResponses = 1);
-        int         readResponse(char *szRespBuffer, int nBufferLen);
+        int         sendCommand(const char *pszCmd, char *pszResult = NULL, int nResultMaxLen = SERIAL_BUFFER_SIZE, int nNbResponses = 1, int bSingleByteResponse = false);
+        int         readResponse(char *szRespBuffer, int nBufferLen, int bSingleByteResponse = false);
         
         double      raStringToDouble(char* cRaString);
         double      decStringToDouble(char* cDecString);

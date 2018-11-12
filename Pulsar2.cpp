@@ -134,7 +134,7 @@ void CPulsar2Controller::disconnect(void)
 ////////////////////////////////////////////////////////////////////////////
 #pragma mark - Send and Receive
 //////////////////////////////////////////////////////////////////////////////
-int CPulsar2Controller::sendCommand(const char *pszCmd, char *pszResult, int nResultMaxLen, int nNbResponses)
+int CPulsar2Controller::sendCommand(const char *pszCmd, char *pszResult, int nResultMaxLen, int nNbResponses, int bSingleByteResponse)
 //
 // Firmware Validity: all
 //
@@ -165,7 +165,7 @@ int CPulsar2Controller::sendCommand(const char *pszCmd, char *pszResult, int nRe
 
     for(i = 0; i<nNbResponses; i++) {
         // read response
-        nErr = readResponse(szResp, SERIAL_BUFFER_SIZE);
+        nErr = readResponse(szResp, SERIAL_BUFFER_SIZE, bSingleByteResponse);
         if(nErr) {
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
             ltime = time(NULL);
@@ -199,7 +199,7 @@ int CPulsar2Controller::sendCommand(const char *pszCmd, char *pszResult, int nRe
 
 
 //////////////////////////////////////////////////////////////////////////////
-int CPulsar2Controller::readResponse(char *szRespBuffer, int nBufferLen)
+int CPulsar2Controller::readResponse(char *szRespBuffer, int nBufferLen, int bSingleByteResponse)
 //
 // Firmware Validity: all
 //
@@ -242,6 +242,10 @@ int CPulsar2Controller::readResponse(char *szRespBuffer, int nBufferLen)
             break;
         }
         ulTotalBytesRead += ulBytesRead;
+        if( ulTotalBytesRead>0 && bSingleByteResponse)
+        { // we got our single byte respone (0/1 usually).
+            break;
+        }
 // -- this has helped solve comms questions, but now leads to lots of output, so it's disabled pending future use (set PULSAR2_DEBUG to VERBOSE_CRAZY in Pulsar2.h)
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_CRAZY
         ltime = time(NULL);
@@ -260,7 +264,7 @@ int CPulsar2Controller::readResponse(char *szRespBuffer, int nBufferLen)
     } while (*pszBufPtr++ != '#' && ulTotalBytesRead < nBufferLen );
 
 // This is a summary, unnecessary if the commented-out part above is used
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL && PULSAR2_DEBUG < VERBOSE_CRAZY
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -273,7 +277,7 @@ int CPulsar2Controller::readResponse(char *szRespBuffer, int nBufferLen)
     if(!ulTotalBytesRead)   // we didn't even get 1 byte after MAX_TIMEOUT (250ms)
         nErr = ERR_RXTIMEOUT;
 
-    else if(ulTotalBytesRead>1)
+    else if(ulTotalBytesRead>1) // single byte response don't end with #
         *(pszBufPtr-1) = 0; //remove the last # so we don't have to parse it later as we don't need it
     
     return nErr;
@@ -670,7 +674,7 @@ int CPulsar2Controller::setDateAndTime()
     
     // send date
     snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:SC %s#", cUtcUsDateString);
-    nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE);  // expected response is "1"
+    nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true);  // not extra # in response so 1 reponse read, 1 byte response.
     if(nErr) {
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
         ltime = time(NULL);
@@ -687,7 +691,7 @@ int CPulsar2Controller::setDateAndTime()
     
     // send time
     snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:SL %s#", cUtcTimeString);
-    nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE);
+    nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1 ,true);   // not extra # in response so 1 reponse read, 1 byte response.
     if(nErr) {
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
         ltime = time(NULL);
@@ -743,7 +747,7 @@ int CPulsar2Controller::setLocation()
         return ERR_NOLINK;
     
     snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:Sg %03d*%02d:%02d#", iDeg, iMin, iSec); // in the form #:Sg 359*29:44#
-    nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE);
+    nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
     if(nErr) {
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
         ltime = time(NULL);
@@ -769,7 +773,7 @@ int CPulsar2Controller::setLocation()
     iSec = (int)floor((((dLongitude-(double)iDeg)*60.0)-(double)iMin)*60.0);
     
     snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:St %+02d*%02d:%02d#", iDeg, iMin, iSec); // in the form #:St +43*57:58#
-    nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE);
+    nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
     if(nErr) {
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
         ltime = time(NULL);
@@ -820,7 +824,7 @@ int CPulsar2Controller::setRAdec(const double &dRA, const double &dDec)
     
     snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:Sr %02i:%02i:%02i#", iRAhh, iRAmm, iRAss);
     
-    nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE);
+    nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
     if(nErr) {
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
         ltime = time(NULL);
@@ -857,7 +861,7 @@ int CPulsar2Controller::setRAdec(const double &dRA, const double &dDec)
     iDecss = (int)floor((((dPosDec-(double)iDechh)*60.0)-(double)iDecmm)*60.0);
     
     snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:Sd %1c%02i*%02i:%02i#", cDecs, iDechh, iDecmm, iDecss);
-    nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE);
+    nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
     if(nErr) {
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
         ltime = time(NULL);
@@ -910,7 +914,7 @@ int CPulsar2Controller::setTrackingRate(int nRate)
     
     snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:YSS%d,0#", nRate);
     
-    nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE);
+    nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
     if(nErr) {
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
         ltime = time(NULL);
@@ -1284,7 +1288,7 @@ int CPulsar2Controller::startMove(int iDir, int iSpeedIndex)
         case 7: snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:YSB512,512#");   break;    // "512x Sidereal"
     }
     
-    nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE);
+    nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
     if(nErr) {
 #if defined DEBUG && DEBUG >= VERBOSE_ALL
         ltime = time(NULL);
