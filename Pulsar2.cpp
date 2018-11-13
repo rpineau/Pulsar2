@@ -1068,7 +1068,7 @@ int CPulsar2Controller::setRefractionCorrection(bool bEnabled)
     else
         nErr = sendCommand(":YSR0,0#", szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
 
-        if(nErr) {
+    if(nErr) {
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
@@ -1078,6 +1078,8 @@ int CPulsar2Controller::setRefractionCorrection(bool bEnabled)
 #endif
         return nErr;
     }
+    if(szResp[0]=='0')
+        nErr = ERR_CMDFAILED;
     return nErr;
 }
 

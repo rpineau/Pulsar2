@@ -25,6 +25,12 @@ X2Mount::X2Mount(const char* pszDriverSelection,
 	m_bLinked = false;
     m_nParity = SerXInterface::B_NOPARITY;
 
+    // set pointers to some of the interfaces inside the Pulsar2 class
+    Pulsar2.setSleeper(pSleeper);  // added by Rodolphe in iEQ30
+    Pulsar2.setSerxPointer(pSerX);
+    Pulsar2.setLoggerPointer(pLogger);
+    Pulsar2.setTSX(pTheSkyX);
+
     // Read in settings
     if (m_pIniUtil)
     {
@@ -35,10 +41,6 @@ X2Mount::X2Mount(const char* pszDriverSelection,
 //        iLoggingVerbosity = m_pIniUtil->readInt(PARENT_KEY_STRING, PULSAR2_VERBOSITY, 0);
     }
     
-// set pointers to some of the interfaces inside the Pulsar2 class
-    Pulsar2.setSleeper(pSleeper);  // added by Rodolphe in iEQ30
-    Pulsar2.setSerxPointer(pSerX);
-    Pulsar2.setLoggerPointer(pLogger);
 
 //    Pulsar2.iVerbosity = iLoggingVerbosity;
     iLoggingVerbosity = Pulsar2.iVerbosity;
