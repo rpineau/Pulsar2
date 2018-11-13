@@ -653,6 +653,8 @@ int X2Mount::setTrackingRates( const bool& bTrackingOn, const bool& bIgnoreRates
  true means turn sidereal tracking on regardless of other parameters
  false means turn it off
  
+ In fact requesting Solar tracking had the folowing parameters: bTrackingOn = true, bIgnoreRates = false etc
+ 
  - bIgnoreRates
  
  true means ignore the content of the rates fields
@@ -709,12 +711,12 @@ int X2Mount::setTrackingRates( const bool& bTrackingOn, const bool& bIgnoreRates
             if (-0.00001 < dRaRateArcSecPerSec && dRaRateArcSecPerSec < 0.00001 && -0.00001 < dDecRateArcSecPerSec && dDecRateArcSecPerSec < 0.00001) {
                 nErr = Pulsar2.setTrackingRate(SIDEREAL);
             }
-            // Lunar rate
-            else if (0.51 < dRaRateArcSecPerSec && dRaRateArcSecPerSec < 0.58 && -0.25 < dDecRateArcSecPerSec && dDecRateArcSecPerSec < 0.25) {
+            // Lunar rate (tolerances increased based on JPL ephemeris generator)
+            else if (0.30 < dRaRateArcSecPerSec && dRaRateArcSecPerSec < 0.83 && -0.25 < dDecRateArcSecPerSec && dDecRateArcSecPerSec < 0.25) {
                 nErr = Pulsar2.setTrackingRate(LUNAR);
             }
-            // Solar rate
-            else if (0.041055 < dRaRateArcSecPerSec && dRaRateArcSecPerSec < 0.04108 && -0.034 < dDecRateArcSecPerSec && dDecRateArcSecPerSec < 0.034) {
+            // Solar rate (tolerances increased based on JPL ephemeris generator, since TSX demanded a rate outside previous tolerance)
+            else if (0.037 < dRaRateArcSecPerSec && dRaRateArcSecPerSec < 0.043 && -0.017 < dDecRateArcSecPerSec && dDecRateArcSecPerSec < 0.017) {
                 nErr = Pulsar2.setTrackingRate(SOLAR);
             }
         }

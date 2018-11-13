@@ -97,20 +97,83 @@ int CPulsar2Controller::connect(const char *szPort)
         m_pSerx->close();
         m_bIsConnected = false;
      }
+    else {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CPulsar2Controller::Connect] Firmware check OK.\n", timestamp);
+    fflush(Logfile);
+#endif
+    }
     
-
-    /*
-
      // Now that we are connected, switch the refraction correction off
     nErr = setRefractionCorrection(false);
-    
+    if(nErr) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::Connect] Error setting refraction correction\n", timestamp);
+        fflush(Logfile);
+#endif
+        return nErr;
+    }
+    else {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::Connect] Setting refraction setting OK.\n", timestamp);
+        fflush(Logfile);
+#endif
+    }
+
     // set the Pulsar2 time to TSX time
-//    nErr = setDateAndTime();                  // leave it off for now to check clock stability
+/*
+ nErr = setDateAndTime();                  // leave it off for now to check clock stability
+    if(nErr) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::Connect] Error setting date and time\n", timestamp);
+        fflush(Logfile);
+#endif
+        return nErr;
+    }
+*/
     
     // set the Pulsar2 location to TSX location
-    nErr = setLocation();
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CPulsar2Controller::Connect] Now set location.\n", timestamp);
+    fflush(Logfile);
+#endif
+    
+   nErr = setLocation();
+    if(nErr) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::Connect] Error setting location\n", timestamp);
+        fflush(Logfile);
+#endif
+        return nErr;
+    }
+    else {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::Connect] Location setting OK.\n", timestamp);
+        fflush(Logfile);
+#endif
+    }
 
-*/
     
     return nErr;
 }
@@ -652,6 +715,13 @@ int CPulsar2Controller::setDateAndTime()
     // It's probably the second of these, but by just using the string after the "T"
     // we can be relatively immune to variations.
     m_pTsx->utInISO8601(pszOut, N_OUT_MAXSIZE);
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CPulsar2Controller::setDateAndTime] ISO8601 string: %s\n", timestamp, pszOut);
+        fflush(Logfile);
+#endif
     
     // extract the actual UTC timestring and datestring
     char cUtcDateString[] = "yyyy-mm-dd";     // yyyy-mm-dd
@@ -668,7 +738,14 @@ int CPulsar2Controller::setDateAndTime()
     cUtcUsDateString[4] = cUtcDateString[9];
     cUtcUsDateString[6] = cUtcDateString[2];
     cUtcUsDateString[7] = cUtcDateString[3];
-    
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CPulsar2Controller::setDateAndTime] Date string: %s\n", timestamp, cUtcUsDateString);
+    fflush(Logfile);
+#endif
+
     if(!m_bIsConnected)
         return ERR_NOLINK;
     
@@ -688,6 +765,13 @@ int CPulsar2Controller::setDateAndTime()
     
     // Now the time
     strncpy(cUtcTimeString, pszOut+11, 8);  // this should point to the time code which starts 11 bytes in from the start
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CPulsar2Controller::setDateAndTime] Time string: %s\n", timestamp, cUtcTimeString);
+    fflush(Logfile);
+#endif
     
     // send time
     snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:SL %s#", cUtcTimeString);
@@ -728,6 +812,14 @@ int CPulsar2Controller::setLocation()
     
     // get longitude
     dLongitude = m_pTsx->longitude();  // TSX has the same inverted logic on longitudes (west = positive) as Pulsar2
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CPulsar2Controller::setLocation] Longitude: %8.4f\n", timestamp, dLongitude);
+    fflush(Logfile);
+#endif
+
     if (dLongitude < 0.0) {dLongitude += 360.0;}
     if (dLongitude > 360.0) {dLongitude -= 360.0;}
     // This is one approach
@@ -745,6 +837,14 @@ int CPulsar2Controller::setLocation()
     
     if(!m_bIsConnected)
         return ERR_NOLINK;
+    
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CPulsar2Controller::setLocation] Longitude string: %03d*%02d:%02d\n", timestamp, iDeg, iMin, iSec);
+    fflush(Logfile);
+#endif
     
     snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:Sg %03d*%02d:%02d#", iDeg, iMin, iSec); // in the form #:Sg 359*29:44#
     nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
@@ -771,6 +871,15 @@ int CPulsar2Controller::setLocation()
     iDeg = (int)floor(dLongitude);
     iMin = (int)floor((dLongitude-(double)iDeg)*60.0);
     iSec = (int)floor((((dLongitude-(double)iDeg)*60.0)-(double)iMin)*60.0);
+ 
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CPulsar2Controller::setLocation] Latitude: %8.4f\n", timestamp, dLatitude);
+    fprintf(Logfile, "[%s] [CPulsar2Controller::setLocation] Latitude string: %+02d*%02d:%02d\n", timestamp, iDeg, iMin, iSec);
+    fflush(Logfile);
+#endif
     
     snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:St %+02d*%02d:%02d#", iDeg, iMin, iSec); // in the form #:St +43*57:58#
     nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
@@ -886,6 +995,7 @@ int CPulsar2Controller::setRAdec(const double &dRA, const double &dDec)
     return nErr;
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 int CPulsar2Controller::setTrackingRate(int nRate)
 //
@@ -954,9 +1064,9 @@ int CPulsar2Controller::setRefractionCorrection(bool bEnabled)
     if(!m_bIsConnected)
         return ERR_NOLINK;
     if (bEnabled)
-        nErr = sendCommand(":YSR1,1#", szResp, SERIAL_BUFFER_SIZE);
+        nErr = sendCommand(":YSR1,1#", szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
     else
-        nErr = sendCommand(":YSR0,0#", szResp, SERIAL_BUFFER_SIZE);
+        nErr = sendCommand(":YSR0,0#", szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
 
         if(nErr) {
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
@@ -1014,7 +1124,7 @@ int CPulsar2Controller::syncRADec(const double &dRa, const double &dDec)
     if(nErr)
         return nErr;
     
-    nErr = sendCommand(":CM#", szResp, SERIAL_BUFFER_SIZE, 2);
+    nErr = sendCommand("#:CM#", szResp, SERIAL_BUFFER_SIZE, 2);
     if(nErr)
         return nErr;
     
@@ -1029,18 +1139,17 @@ int CPulsar2Controller::syncRADec(const double &dRa, const double &dDec)
     // response echoes the synced coordinates back, unlike the LX200 or iEQ30 version
     // so decode these and check against the command to verify success
     // Note that some small error is likely.
-    
     char raString[SERIAL_BUFFER_SIZE];  // "HH:MM:SS#";
     char decString[SERIAL_BUFFER_SIZE]; // "sDD:MM:SS#";
-    strncpy(raString, szResp, 9);
-    strncpy(decString, szResp+9, 10);
+    strncpy(raString, szResp, 8);
+    strncpy(decString, szResp+9, 9);
     
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s] [CPulsar2Controller::SyncRADec]Converted raString : %3.2f\n", timestamp, raStringToDouble(raString));
-    fprintf(Logfile, "[%s] [CPulsar2Controller::SyncRADec]Converted decString : %3.2f\n", timestamp, decStringToDouble(decString));
+    fprintf(Logfile, "[%s] [CPulsar2Controller::SyncRADec]Converted raString : %7.4f\n", timestamp, raStringToDouble(raString));
+    fprintf(Logfile, "[%s] [CPulsar2Controller::SyncRADec]Converted decString : %8.4f\n", timestamp, decStringToDouble(decString));
     fflush(Logfile);
 #endif
     
