@@ -89,10 +89,10 @@ class CPulsar2Controller
         int         getRADec(double &dRA, double &dDec);                    // Works
         int         toggleFormat();                                         // Works
 
-        int         setRefractionCorrection(bool bEnabled);                 // not tested
+        int         setRefractionCorrection(bool bEnabled);                 // Works
         int         getRefractionCorrection(bool &bRefractionNeeded);       // not tested
 
-        int         syncRADec(const double &dRA, const double &dDec);       // not tested
+        int         syncRADec(const double &dRA, const double &dDec);       // Works but returns ERR_CMDFAILED, even though it didn't
         int         getSideOfPier(int &nPierSide);                          // Works
         int         getFirmware(char *szFirmware, int nMaxStrSize);         // Works
 
@@ -102,16 +102,16 @@ class CPulsar2Controller
         int         stopMoving(int iDir);                                   // Works
         int         startMove(int iDir, int iSpeedIndex);                   // Works
         
-        int         setTrackingRate(int iRate);                             // not tested
-        int         trackingOff(void);                                      // not tested
-        int         getTracking(int &iTrackingRate);                        // not tested
+        int         setTrackingRate(int iRate);                             // Works
+        int         trackingOff(void);                                      // Works
+        int         getTracking(int &iTrackingRate);                        // Works
 
         int         park(const double& dAz, const double& dAlt);            // Works
         int         unPark();                                               // Works
         int         parkStatus(bool &isParked);                             // Works
 
         int         setDateAndTime();                                       // not tested
-        int         setLocation();                                          // not tested
+        int         setLocation();                                          // Works
 
         int         setRAdec(const double &dRA, const double &dDec);        // Works
 
@@ -155,8 +155,8 @@ class CPulsar2Controller
         char        szFirmware[9];
         int         iMajorFirmwareVersion; // added by CRF 4 Nov 2018, to be used to distinguish commands in v. 5.xx
         char        m_szLogMessage[LOG_BUFFER_SIZE];
-
-        const char m_aszSlewRateNames[NB_SLEW_SPEEDS][SLEW_NAME_LENGHT] = {"Guide", "Centre", "Find", "Slew"};
+        
+         const char m_aszSlewRateNames[NB_SLEW_SPEEDS][SLEW_NAME_LENGHT] = {"Guide", "Centre", "Find", "Slew"};
 
 #ifdef PULSAR2_DEBUG
         std::string m_sLogfilePath;

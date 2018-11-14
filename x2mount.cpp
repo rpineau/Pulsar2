@@ -207,7 +207,7 @@ void X2Mount::deviceInfoNameShort(BasicStringInterface& str) const
 ////////////////////////////////////////////////////////////////////////////
 void X2Mount::deviceInfoNameLong(BasicStringInterface& str) const
 {
-	str = "Pulsar2 Mount drive";
+	str = "Pulsar2 Mount Controller";
 
 }
 
@@ -290,7 +290,7 @@ int	X2Mount::abort(void)
         return ERR_NOLINK;
     X2MutexLocker ml(GetMutex());
 
-    Pulsar2.stopSlew();
+    Pulsar2.stopSlew();  // not sure if this is sufficient to stop everything
     
     return SB_OK;
 
@@ -315,7 +315,7 @@ int X2Mount::syncMount(const double& ra, const double& dec)
 
     X2MutexLocker ml(GetMutex());
 
-    if (!Pulsar2.syncRADec(ra, dec))
+    if (Pulsar2.syncRADec(ra, dec) != OK)
         return ERR_CMDFAILED;
 
  return SB_OK;
@@ -715,10 +715,14 @@ int X2Mount::setTrackingRates( const bool& bTrackingOn, const bool& bIgnoreRates
             }
             // Lunar rate (tolerances increased based on JPL ephemeris generator)
             else if (0.30 < dRaRateArcSecPerSec && dRaRateArcSecPerSec < 0.83 && -0.25 < dDecRateArcSecPerSec && dDecRateArcSecPerSec < 0.25) {
+                dCommandedRAlunarRate = dRaRateArcSecPerSec;
+                dCommandedDeclunarRate = dDecRateArcSecPerSec;
                 nErr = Pulsar2.setTrackingRate(LUNAR);
             }
             // Solar rate (tolerances increased based on JPL ephemeris generator, since TSX demanded a rate outside previous tolerance)
             else if (0.037 < dRaRateArcSecPerSec && dRaRateArcSecPerSec < 0.043 && -0.017 < dDecRateArcSecPerSec && dDecRateArcSecPerSec < 0.017) {
+                dCommandedRAsolarRate = dRaRateArcSecPerSec;
+                dCommandedDecsolarRate = dDecRateArcSecPerSec;
                 nErr = Pulsar2.setTrackingRate(SOLAR);
             }
         }
@@ -785,6 +789,11 @@ int X2Mount::trackingRates( bool& bTrackingOn, double& dRaRateArcSecPerSec, doub
     bTrackingOn = false; dRaRateArcSecPerSec = 15.0410681 +- 0.00001; dDecRateArcSecPerSec = 0 +- 0.00001 means "Tracking Off".
  
     If the mount can set tracking rate but not read it, return bTrackingOn=false and return both rates as -1000.0
+ 
+ Firmware validity:
+    - V4.xx relies on using cached values for solar and lunar rates
+    - V5.xx uses the results from set immediate rate
+ 
 */
     int nErr = SB_OK;
     int iTrackingRate;
@@ -823,8 +832,8 @@ int X2Mount::trackingRates( bool& bTrackingOn, double& dRaRateArcSecPerSec, doub
 
         case LUNAR:
             bTrackingOn = true;
-            dRaRateArcSecPerSec = 0.5490149;
-            dDecRateArcSecPerSec = 0.0;
+            dRaRateArcSecPerSec = dCommandedRAlunarRate;
+            dDecRateArcSecPerSec = dCommandedDeclunarRate;
             if (iLoggingVerbosity >= VERBOSE_FUNCTION_TRACKING)
                 if (GetLogger())
                     GetLogger()->out((char *) "X2Mount::trackingRates: response is LUNAR");
@@ -832,8 +841,8 @@ int X2Mount::trackingRates( bool& bTrackingOn, double& dRaRateArcSecPerSec, doub
 
         case SOLAR:
             bTrackingOn = true;
-            dRaRateArcSecPerSec = 0.0410681;
-            dDecRateArcSecPerSec = 0.0;
+            dRaRateArcSecPerSec = dCommandedRAsolarRate;
+            dDecRateArcSecPerSec = dCommandedDecsolarRate;
             if (iLoggingVerbosity >= VERBOSE_FUNCTION_TRACKING)
                 if (GetLogger())
                     GetLogger()->out((char *) "X2Mount::trackingRates: response is SOLAR");

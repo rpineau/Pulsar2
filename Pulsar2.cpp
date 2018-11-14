@@ -565,8 +565,17 @@ int CPulsar2Controller::getFirmware(char *szFirmware, int nMaxStrSize)
         return nErr;
     
     // Okay, we got something. Is it a valid looking firmware identifier?
-    if (memcmp("PULSAR V", szResp, 8) != 0)
-        return ERR_CMDFAILED;
+    if (memcmp("PULSAR V", szResp, 8) != 0) {
+        nErr = ERR_CMDFAILED;
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::GetFirmware] ERR_CMDFAILED: nErr = : %d\n", timestamp, nErr);
+        fflush(Logfile);
+#endif
+        return nErr;
+    }
     
 //    strncpy(szFirmware, szResp+7, nMaxStrSize); // copy the whole string, including the date
     strncpy(szFirmware, szResp+7, 6); szFirmware[6] = 0;  // or without the date
@@ -610,7 +619,14 @@ int CPulsar2Controller::getSideOfPier(int &nPierSide)
     else {
         nPierSide = -1;
         nErr = ERR_CMDFAILED;
-    }
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::GetSideOfPier] nErr = %d\n", timestamp, nErr);
+        fflush(Logfile);
+#endif
+   }
     return nErr;
 }
 
@@ -657,6 +673,13 @@ int CPulsar2Controller::getRefractionCorrection(bool &bRefractionNeeded)
     else {
         bRefractionNeeded = true;  // it has to be one or the other ...
         nErr = ERR_CMDFAILED;
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::getRefractionCorrection] ERR_CMDFAILED: nErr = %d\n", timestamp, nErr);
+        fflush(Logfile);
+#endif
 }
     return nErr;
 }
@@ -868,9 +891,9 @@ int CPulsar2Controller::setLocation()
      iMin = (int)dMin;
      iSec = (int)dSec*60.0;
      */
-    iDeg = (int)floor(dLongitude);
-    iMin = (int)floor((dLongitude-(double)iDeg)*60.0);
-    iSec = (int)floor((((dLongitude-(double)iDeg)*60.0)-(double)iMin)*60.0);
+    iDeg = (int)floor(dLatitude);
+    iMin = (int)floor((dLatitude-(double)iDeg)*60.0);
+    iSec = (int)floor((((dLatitude-(double)iDeg)*60.0)-(double)iMin)*60.0);
  
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
     ltime = time(NULL);
@@ -953,7 +976,16 @@ int CPulsar2Controller::setRAdec(const double &dRA, const double &dDec)
         fprintf(Logfile, "[%s] [CPulsar2Controller::setRAdec] Error setRAdec to Ra = %3.2f : %s\n", timestamp, dRA, szResp);
         fflush(Logfile);
 #endif
-        return ERR_CMDFAILED;
+        nErr = ERR_CMDFAILED;
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::setRAdec] ERR_CMDFAILED: nErr = %d\n", timestamp, nErr);
+        fflush(Logfile);
+#endif
+        return nErr;
+        
     }
     
     // Now the dec
@@ -990,7 +1022,15 @@ int CPulsar2Controller::setRAdec(const double &dRA, const double &dDec)
         fprintf(Logfile, "[%s] [CPulsar2Controller::setRAdec] Error setRAdec to Dec = %3.2f : %s\n", timestamp, dDec, szResp);
         fflush(Logfile);
 #endif
-        return ERR_CMDFAILED;
+        nErr = ERR_CMDFAILED;
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::setRAdec] ERR_CMDFAILED: nErr = %d\n", timestamp, nErr);
+        fflush(Logfile);
+#endif
+        return nErr;
     }
     return nErr;
 }
@@ -1037,14 +1077,16 @@ int CPulsar2Controller::setTrackingRate(int nRate)
     }
     
     if (szResp[0] != '1'){
+        nErr = ERR_CMDFAILED;
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
         fprintf(Logfile, "[%s] [CPulsar2Controller::setTrackingRate] Error setting tracking to %d : %s\n", timestamp, nRate, szResp);
+        fprintf(Logfile, "[%s] [CPulsar2Controller::setTrackingRate] ERR_CMDFAILED: nErr = %d\n", timestamp, nErr);
         fflush(Logfile);
 #endif
-        return ERR_CMDFAILED;
+        return nErr;
     }
     return nErr;
 }
@@ -1080,6 +1122,13 @@ int CPulsar2Controller::setRefractionCorrection(bool bEnabled)
     }
     if(szResp[0]=='0')
         nErr = ERR_CMDFAILED;
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CPulsar2Controller::setRefractionCorrection] ERR_CMDFAILED: nErr = %d\n", timestamp, nErr);
+    fflush(Logfile);
+#endif
     return nErr;
 }
 
@@ -1155,27 +1204,42 @@ int CPulsar2Controller::syncRADec(const double &dRa, const double &dDec)
     fflush(Logfile);
 #endif
     
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+    // print out the deltas
+    double deltaRA;  // in arcsec
+    double deltaDec;  // in arcsec
+    deltaRA = fabs(raStringToDouble(raString) - dRa) * 3600.0;
+    deltaDec = fabs(decStringToDouble(decString) - dDec) *3600.00;
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CPulsar2Controller::SyncRADec]delta RA : %7.4f\n", timestamp, deltaRA);
+    fprintf(Logfile, "[%s] [CPulsar2Controller::SyncRADec]delta RA : %8.4f\n", timestamp, deltaDec);
+    fprintf(Logfile, "[%s] [CPulsar2Controller::SyncRADec]nErr : %d\n", timestamp, nErr);
+    fflush(Logfile);
+#endif
+    
     // we will allow a tolerance on each axis
 #define TOLERANCE_ARCSEC       5.0
-    if ((fabs(raStringToDouble(raString) - dRa) < TOLERANCE_ARCSEC/3600.0) &&
-        (fabs(decStringToDouble(decString) - dDec) < TOLERANCE_ARCSEC/3600.0)) {
-#if defined DEBUG && DEBUG >= VERBOSE_ALL
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CPulsar2Controller::SyncRADec] Calibrate Mount command succeeded\n", timestamp);
-        fflush(Logfile);
-#endif
-    }
-    else {
+    if ((fabs(raStringToDouble(raString) - dRa)*3600.0 < TOLERANCE_ARCSEC) &&
+        (fabs(decStringToDouble(decString) - dDec)*3600.0 < TOLERANCE_ARCSEC)) {
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CPulsar2Controller::SyncRADec] Calibrate Mount command failed\n", timestamp);
+        fprintf(Logfile, "[%s] [CPulsar2Controller::SyncRADec] Calibrate Mount command succeeded. nErr = %d\n", timestamp, nErr);
         fflush(Logfile);
 #endif
+    }
+    else {
         nErr = ERR_CMDFAILED;
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::SyncRADec] ERR_CMDFAILED. Calibrate Mount command failed. nErr = %d\n", timestamp, nErr);
+        fflush(Logfile);
+#endif
     }
     
     
@@ -1587,14 +1651,16 @@ int CPulsar2Controller::park(const double& dAz, const double& dAlt)
         return nErr;
     }
     if (szResp[0] != '1'){
+        nErr = ERR_CMDFAILED;
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
         fprintf(Logfile, "[%s] [CPulsar2Controller::Park] Error parking mount : %s\n", timestamp, szResp);
+        fprintf(Logfile, "[%s] [CPulsar2Controller::Park] ERR_CMDFAILED. nErr = %d\n", timestamp, nErr);
         fflush(Logfile);
 #endif
-        return ERR_CMDFAILED;
+        return nErr;
     }
     
     return nErr;
@@ -1688,14 +1754,16 @@ int CPulsar2Controller::unPark()
         return nErr;
     }
     if (szResp[0] != '1'){
+        nErr = ERR_CMDFAILED;
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
         fprintf(Logfile, "[%s] [CPulsar2Controller::unPark] Error unparking mount : %s\n", timestamp, szResp);
+        fprintf(Logfile, "[%s] [CPulsar2Controller::unPark] ERR_CMDFAILED: nErr = %d\n", timestamp, nErr);
         fflush(Logfile);
 #endif
-        return ERR_CMDFAILED;
+        return nErr;
     }
     
     return nErr;

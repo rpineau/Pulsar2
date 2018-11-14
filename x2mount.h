@@ -224,6 +224,16 @@ private:
     int                                     iMeridianBehaviourStored;
     int                                     iLoggingVerbosity;
     
+    // the following are used to cache the requested values for solar and lunar rates, since TSX has instantaneous values
+    // for these, unlike the average values in the Pulsar2 firmware. They are used to return the values set by TSX
+    // when commandig Solar or Lunar rate. However, the Pulsar2 itself continues to use its pre-programmed average
+    // rates. This is valid for v4.xx of the firmware
+    // For V5.xx, it is possible to command rates directly and this is used if V5.xx is installed.
+    double dCommandedRAsolarRate = 0.0410681;   // initialised to nominal rates to handle case where tracking rates are
+    double dCommandedDecsolarRate = 0.0;        // queried before being set (they are queried every 1 sec)
+    double dCommandedRAlunarRate = 0.5490149;
+    double dCommandedDeclunarRate = 0.0;
+    
     MountDriverInterface::MoveDir           currentMoveDir;
 
     CPulsar2Controller                      Pulsar2;
