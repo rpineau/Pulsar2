@@ -55,7 +55,7 @@
 
 #define LOG_BUFFER_SIZE 256
 #define SERIAL_BUFFER_SIZE 64
-#define MAX_TIMEOUT 1000        // 1000 ms
+#define MAX_TIMEOUT 1500        // 1000 ms
 // #define TIMEOUT_READ 1500
 
 #define N_OUT_MAXSIZE 40  // buffer for the UTC timecode in ISO8601 format
@@ -92,9 +92,11 @@ class CPulsar2Controller
         int         setRefractionCorrection(bool bEnabled);                 // Works
         int         getRefractionCorrection(bool &bRefractionNeeded);       // not tested
 
-        int         syncRADec(const double &dRA, const double &dDec);       // Works but returns ERR_CMDFAILED, even though it didn't
+        int         syncRADec(const double &dRA, const double &dDec);       // Works
         int         getSideOfPier(int &nPierSide);                          // Works
         int         getFirmware(char *szFirmware, int nMaxStrSize);         // Works
+
+        int         commandTubeSwap(void);                                  // not tested
 
         int         startSlew(const double& dRa, const double& dDec);       // Works
         int         slewStatus(bool &bIsSlewing);                           // Works
@@ -133,7 +135,26 @@ class CPulsar2Controller
 
         int         iVerbosity = VERBOSE_ESSENTIAL;
 
+        void        logMessage(char* cMethod, char* cMessage);
 
+        // Stored parameters
+        
+        double                                  dHoursEastStored;
+        double                                  dHoursWestStored;
+        double                                  dFlipHourStored;
+        int                                     iMeridianBehaviourStored;
+        double                                  dGuideRateRAStored;
+        double                                  dGuideRateDecStored;
+        int                                     iCentreRateRAStored;
+        int                                     iCentreRateDecStored;
+        int                                     iFindRateRAStored;
+        int                                     iFindRateDecStored;
+        int                                     iSlewRateRAStored;
+        int                                     iSlewRateDecStored;
+        bool                                    bSyncTimeOnConnectStored;
+        bool                                    bSyncLocationOnConnectStored;
+        
+        
     protected:
 
         int         sendCommand(const char *pszCmd, char *pszResult = NULL, int nResultMaxLen = SERIAL_BUFFER_SIZE, int nNbResponses = 1, int bSingleByteResponse = false);
@@ -142,7 +163,7 @@ class CPulsar2Controller
         double      raStringToDouble(char* cRaString);
         double      decStringToDouble(char* cDecString);
         int         parseFields(const char *pszIn, std::vector<std::string> &svFields, char cSeparator);
-
+        
         bool        m_bIsConnected;
         
         char        m_szFirmware[SERIAL_BUFFER_SIZE];
@@ -155,6 +176,8 @@ class CPulsar2Controller
         char        szFirmware[9];
         int         iMajorFirmwareVersion; // added by CRF 4 Nov 2018, to be used to distinguish commands in v. 5.xx
         char        m_szLogMessage[LOG_BUFFER_SIZE];
+        
+        bool swapTubeCommandIssued;
         
          const char m_aszSlewRateNames[NB_SLEW_SPEEDS][SLEW_NAME_LENGHT] = {"Guide", "Centre", "Find", "Slew"};
 

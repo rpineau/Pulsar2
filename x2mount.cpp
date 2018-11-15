@@ -34,11 +34,22 @@ X2Mount::X2Mount(const char* pszDriverSelection,
     // Read in settings
     if (m_pIniUtil)
     {
-        dHoursEastStored = m_pIniUtil->readDouble(PARENT_KEY_STRING, PULSAR2_HOURS_EAST, 0.0);
-        dHoursWestStored = m_pIniUtil->readDouble(PARENT_KEY_STRING, PULSAR2_HOURS_WEST, 0.0);
-        dFlipHourStored = m_pIniUtil->readDouble(PARENT_KEY_STRING, PULSAR2_FLIPHOUR, 0.0);
-        iMeridianBehaviourStored = m_pIniUtil->readInt(PARENT_KEY_STRING, PULSAR2_MERIDIAN, 1);
-//        iLoggingVerbosity = m_pIniUtil->readInt(PARENT_KEY_STRING, PULSAR2_VERBOSITY, 0);
+        Pulsar2.dHoursEastStored = m_pIniUtil->readDouble(PARENT_KEY_STRING, PULSAR2_HOURS_EAST, 0.0);
+        Pulsar2.dHoursWestStored = m_pIniUtil->readDouble(PARENT_KEY_STRING, PULSAR2_HOURS_WEST, 0.0);
+        Pulsar2.dFlipHourStored = m_pIniUtil->readDouble(PARENT_KEY_STRING, PULSAR2_FLIPHOUR, 0.0);
+        Pulsar2.iMeridianBehaviourStored = m_pIniUtil->readInt(PARENT_KEY_STRING, PULSAR2_MERIDIAN, 1);
+
+        Pulsar2.dGuideRateRAStored = m_pIniUtil->readDouble(PARENT_KEY_STRING, PULSAR2_GUIDE_RA, 0.3);
+        Pulsar2.dGuideRateDecStored = m_pIniUtil->readDouble(PARENT_KEY_STRING, PULSAR2_GUIDE_DEC, 0.3);
+        Pulsar2.iCentreRateRAStored = m_pIniUtil->readInt(PARENT_KEY_STRING, PULSAR2_CENTRE_RA, 20);
+        Pulsar2.iCentreRateDecStored = m_pIniUtil->readInt(PARENT_KEY_STRING, PULSAR2_CENTRE_DEC, 20);
+        Pulsar2.iFindRateRAStored = m_pIniUtil->readInt(PARENT_KEY_STRING, PULSAR2_FIND_RA, 100);
+        Pulsar2.iFindRateDecStored = m_pIniUtil->readInt(PARENT_KEY_STRING, PULSAR2_FIND_DEC, 100);
+        Pulsar2.iSlewRateRAStored = m_pIniUtil->readInt(PARENT_KEY_STRING, PULSAR2_SLEW_RA, 750);
+        Pulsar2.iSlewRateDecStored = m_pIniUtil->readInt(PARENT_KEY_STRING, PULSAR2_SLEW_DEC, 750);
+        Pulsar2.bSyncTimeOnConnectStored = m_pIniUtil->readInt(PARENT_KEY_STRING, PULSAR2_SYNC_TIME, 0);
+        Pulsar2.bSyncLocationOnConnectStored = m_pIniUtil->readInt(PARENT_KEY_STRING, PULSAR2_SYNC_LOCATION, 0);
+        
     }
     
 
@@ -400,7 +411,8 @@ int X2Mount::beyondThePole(bool& bYes)
 ////////////////////////////////////////////////////////////////////////////
 double X2Mount::flipHourAngle()
 {
-    
+    // depending on the setting in iMeridianTreatment, the mount may or may not flip
+    // automatically. But we will here return the vlaue for the flip anyway.
     if (iLoggingVerbosity >= VERBOSE_FUNCTION_TRACKING)
         if (GetLogger())
             GetLogger()->out((char *) "X2Mount::flipHourAngle");
@@ -409,8 +421,8 @@ double X2Mount::flipHourAngle()
         return ERR_NOLINK;
 
     X2MutexLocker ml(GetMutex());
-    // probably need to get this from the mount
-    return dFlipHourStored;
+
+    return Pulsar2.dFlipHourStored;
 
 }
 
@@ -428,8 +440,8 @@ int X2Mount::gemLimits(double& dHoursEast, double& dHoursWest)
 
     X2MutexLocker ml(GetMutex());
 
-    dHoursEast = dHoursEastStored;
-    dHoursWest = dHoursWestStored;
+    dHoursEast = Pulsar2.dHoursEastStored;
+    dHoursWest = Pulsar2.dHoursWestStored;
     
     return SB_OK;
 }
@@ -715,14 +727,14 @@ int X2Mount::setTrackingRates( const bool& bTrackingOn, const bool& bIgnoreRates
             }
             // Lunar rate (tolerances increased based on JPL ephemeris generator)
             else if (0.30 < dRaRateArcSecPerSec && dRaRateArcSecPerSec < 0.83 && -0.25 < dDecRateArcSecPerSec && dDecRateArcSecPerSec < 0.25) {
-                dCommandedRAlunarRate = dRaRateArcSecPerSec;
-                dCommandedDeclunarRate = dDecRateArcSecPerSec;
+            //    dCommandedRAlunarRate = dRaRateArcSecPerSec;
+            //    dCommandedDeclunarRate = dDecRateArcSecPerSec;
                 nErr = Pulsar2.setTrackingRate(LUNAR);
             }
             // Solar rate (tolerances increased based on JPL ephemeris generator, since TSX demanded a rate outside previous tolerance)
             else if (0.037 < dRaRateArcSecPerSec && dRaRateArcSecPerSec < 0.043 && -0.017 < dDecRateArcSecPerSec && dDecRateArcSecPerSec < 0.017) {
-                dCommandedRAsolarRate = dRaRateArcSecPerSec;
-                dCommandedDecsolarRate = dDecRateArcSecPerSec;
+            //    dCommandedRAsolarRate = dRaRateArcSecPerSec;
+            //    dCommandedDecsolarRate = dDecRateArcSecPerSec;
                 nErr = Pulsar2.setTrackingRate(SOLAR);
             }
         }
@@ -790,6 +802,20 @@ int X2Mount::trackingRates( bool& bTrackingOn, double& dRaRateArcSecPerSec, doub
  
     If the mount can set tracking rate but not read it, return bTrackingOn=false and return both rates as -1000.0
  
+ Nominal rates [arcsec/sec]:
+ Stopped:
+    RA  = 15.0410681
+    Dec = 0.0
+ Sidereal:
+    RA  = 0.0
+    Dec = 0.0
+ Lunar:
+    RA  = 0.5490149
+    Dec = 0.0
+ Solar:
+    RA  = 0.0410681
+    Dec = 0.0
+
  Firmware validity:
     - V4.xx relies on using cached values for solar and lunar rates
     - V5.xx uses the results from set immediate rate
@@ -814,47 +840,52 @@ int X2Mount::trackingRates( bool& bTrackingOn, double& dRaRateArcSecPerSec, doub
     switch (iTrackingRate) {
         case STOPPED:
             bTrackingOn = false;
-            dRaRateArcSecPerSec = 15.0410681;
-            dDecRateArcSecPerSec = 0.0;
+            dRaRateArcSecPerSec = RA_RATE_STOPPED;
+            dDecRateArcSecPerSec = DEC_RATE_STOPPED;
             if (iLoggingVerbosity >= VERBOSE_FUNCTION_TRACKING)
                 if (GetLogger())
                     GetLogger()->out((char *) "X2Mount::trackingRates: response is STOPPED");
+            Pulsar2.logMessage((char *) "X2Mount::trackingRates", (char *) "trackingRates: response is STOPPED");
             break;
             
         case SIDEREAL:
             bTrackingOn = true;
-            dRaRateArcSecPerSec = 0.0;
-            dDecRateArcSecPerSec = 0.0;
+            dRaRateArcSecPerSec = RA_RATE_SIDEREAL;
+            dDecRateArcSecPerSec = DEC_RATE_SIDEREAL;
             if (iLoggingVerbosity >= VERBOSE_FUNCTION_TRACKING)
                 if (GetLogger())
                     GetLogger()->out((char *) "X2Mount::trackingRates: response is SIDEREAL");
+            Pulsar2.logMessage((char *) "X2Mount::trackingRates", (char *) "trackingRates: response is SIDEREAL");
             break;
 
         case LUNAR:
-            bTrackingOn = true;
-            dRaRateArcSecPerSec = dCommandedRAlunarRate;
-            dDecRateArcSecPerSec = dCommandedDeclunarRate;
+            bTrackingOn = false;
+            dRaRateArcSecPerSec = RA_RATE_LUNAR;
+            dDecRateArcSecPerSec = DEC_RATE_LUNAR;
             if (iLoggingVerbosity >= VERBOSE_FUNCTION_TRACKING)
                 if (GetLogger())
                     GetLogger()->out((char *) "X2Mount::trackingRates: response is LUNAR");
+            Pulsar2.logMessage((char *) "X2Mount::trackingRates", (char *) "trackingRates: response is LUNAR");
             break;
 
         case SOLAR:
-            bTrackingOn = true;
-            dRaRateArcSecPerSec = dCommandedRAsolarRate;
-            dDecRateArcSecPerSec = dCommandedDecsolarRate;
+            bTrackingOn = false;
+            dRaRateArcSecPerSec = RA_RATE_SOLAR;
+            dDecRateArcSecPerSec = DEC_RATE_SOLAR;
             if (iLoggingVerbosity >= VERBOSE_FUNCTION_TRACKING)
                 if (GetLogger())
                     GetLogger()->out((char *) "X2Mount::trackingRates: response is SOLAR");
+            Pulsar2.logMessage((char *) "X2Mount::trackingRates", (char *) "trackingRates: response is SOLAR");
            break;
             
         default:
             bTrackingOn = false;
-            dRaRateArcSecPerSec = 15.0410681;
-            dDecRateArcSecPerSec = 0.0;
+            dRaRateArcSecPerSec = RA_RATE_STOPPED;
+            dDecRateArcSecPerSec = DEC_RATE_STOPPED;
             if (iLoggingVerbosity >= VERBOSE_FUNCTION_TRACKING)
                 if (GetLogger())
                     GetLogger()->out((char *) "X2Mount::trackingRates: response is default (STOPPED)");
+            Pulsar2.logMessage((char *) "X2Mount::trackingRates", (char *) "trackingRates: response is STOPPED");
            break;
     }
     
@@ -1033,27 +1064,30 @@ int	X2Mount::endUnpark(void)
 //
 int X2Mount::execModalSettingsDialog(void)
 {
- 	int nErr = SB_OK;
-	X2ModalUIUtil uiutil(this,      m_pTheSkyXForMounts);
-	X2GUIInterface*					ui = uiutil.X2UI();
-	X2GUIExchangeInterface*			dx = NULL;//Comes after ui is loaded
-	bool bPressedOK = false;
+    int nErr = SB_OK;
+    X2ModalUIUtil uiutil(this,      m_pTheSkyXForMounts);
+    X2GUIInterface*					ui = uiutil.X2UI();
+    X2GUIExchangeInterface*			dx = NULL;//Comes after ui is loaded
+    bool bPressedOK = false;
     
-	if (NULL == ui)
-		return ERR_POINTER;
+    if (NULL == ui)
+        return ERR_POINTER;
     
-	if ((nErr = ui->loadUserInterface("Pulsar2.ui", deviceType(), m_nPrivateMulitInstanceIndex)))
-		return nErr;
+    if ((nErr = ui->loadUserInterface("Pulsar2.ui", deviceType(), m_nPrivateMulitInstanceIndex)))
+        return nErr;
     
-	if (NULL == (dx = uiutil.X2DX()))
-		return ERR_POINTER;
+    if (NULL == (dx = uiutil.X2DX()))
+        return ERR_POINTER;
     
     
     dx->setEnabled("groupBox_4", true);
-        
-//  Set the UI dialog in accordance with stored values
-    switch (iMeridianBehaviourStored)
-        {
+    
+    //-----------------------------------------------------
+    //  Set the UI dialog in accordance with stored values
+    
+    //  Meridian Behaviour
+    switch (Pulsar2.iMeridianBehaviourStored)
+    {
         case 0:
             dx->setChecked("radioButton_Stop", true);
             break;
@@ -1061,56 +1095,93 @@ int X2Mount::execModalSettingsDialog(void)
             dx->setChecked("radioButton_Flip", true);
             break;
         case 2:
-            dx->setChecked("radioButton_Continue", true);
+            dx->setChecked("radioButton_Continue_Stop", true);
             break;
-        }
-        
-    dx->setPropertyDouble("doubleSpinBox_HoursEast", "value", dHoursEastStored);
-    dx->setPropertyDouble("doubleSpinBox_HoursWest", "value", dHoursWestStored);
+        case 3:
+            dx->setChecked("radioButton_Continue_Flip", true);
+            break;
+    }
 
-    dx->setPropertyDouble("doubleSpinBox_HourFlip", "value", dFlipHourStored);
-            
+    //  Meridian Values
+    dx->setPropertyDouble("doubleSpinBox_HoursEast", "value", Pulsar2.dHoursEastStored);
+    dx->setPropertyDouble("doubleSpinBox_HoursWest", "value", Pulsar2.dHoursWestStored);
+    dx->setPropertyDouble("doubleSpinBox_HourFlip", "value", Pulsar2.dFlipHourStored);
     
-//    dx->setPropertyInt("horizontalSlider_Verbosity", "value", iLoggingVerbosity);
+    //  Set Rates
+    dx->setPropertyDouble("doubleSpinBox_Guide_RA", "value", Pulsar2.dGuideRateRAStored);
+    dx->setPropertyDouble("doubleSpinBox_GuideDec", "value", Pulsar2.dGuideRateDecStored);
+    dx->setPropertyInt("spinBox_Centre_RA", "value", Pulsar2.iCentreRateRAStored);
+    dx->setPropertyInt("spinBox_Centre_Dec", "value", Pulsar2.iCentreRateDecStored);
+    dx->setPropertyInt("spinBox_Find_RA", "value", Pulsar2.iFindRateRAStored);
+    dx->setPropertyInt("spinBox_Find_Dec", "value", Pulsar2.iFindRateDecStored);
+    dx->setPropertyInt("spinBox_Slew_RA", "value", Pulsar2.iSlewRateRAStored);
+    dx->setPropertyInt("spinBox_Slew_Dec", "value", Pulsar2.iSlewRateDecStored);
 
+    //   Synchronisation on Connect
+    dx->setChecked("checkBox_syncTime", Pulsar2.bSyncTimeOnConnectStored);
+    dx->setChecked("checkBox_syncLocation", Pulsar2.bSyncLocationOnConnectStored);
+    //-----------------------------------------------------
+
+    
     X2MutexLocker ml(GetMutex());
-
-	//Display the user interface
-	if((nErr = ui->exec(bPressedOK)))
-		return nErr;
     
-	//Retrieve values from the user interface
-	if (bPressedOK)
+    //Display the user interface
+    if((nErr = ui->exec(bPressedOK)))
+        return nErr;
+    
+    //Retrieve values from the user interface
+    if (bPressedOK)
     {
         if(dx->isChecked("radioButton_Stop"))
-            iMeridianBehaviourStored = 0;
+            Pulsar2.iMeridianBehaviourStored = 0;
         if(dx->isChecked("radioButton_Flip"))
-            iMeridianBehaviourStored = 1;
-        if(dx->isChecked("radioButton_Continue"))
-            iMeridianBehaviourStored = 2;
+            Pulsar2.iMeridianBehaviourStored = 1;
+        if(dx->isChecked("radioButton_Continue_Stop"))
+            Pulsar2.iMeridianBehaviourStored = 2;
+        if(dx->isChecked("radioButton_Continue_Flip"))
+            Pulsar2.iMeridianBehaviourStored = 3;
 
-        dx->propertyDouble("doubleSpinBox_HoursEast", "value", dHoursEastStored);
-        dx->propertyDouble("doubleSpinBox_HoursWest", "value", dHoursWestStored);
-
-        dx->propertyDouble("doubleSpinBox_HourFlip", "value", dFlipHourStored);
+        dx->propertyDouble("doubleSpinBox_HoursEast", "value", Pulsar2.dHoursEastStored);
+        dx->propertyDouble("doubleSpinBox_HoursWest", "value", Pulsar2.dHoursWestStored);
+        dx->propertyDouble("doubleSpinBox_HourFlip", "value", Pulsar2.dFlipHourStored);
         
+        dx->propertyDouble("doubleSpinBox_Guide_RA", "value", Pulsar2.dGuideRateRAStored);
+        dx->propertyDouble("doubleSpinBox_Guide_Dec", "value", Pulsar2.dGuideRateDecStored);
+        dx->propertyInt("spinBox_Centre_RA", "value", Pulsar2.iCentreRateRAStored);
+        dx->propertyInt("spinBox_Centre_Dec", "value", Pulsar2.iCentreRateDecStored);
+        dx->propertyInt("spinBox_Find_RA", "value", Pulsar2.iFindRateRAStored);
+        dx->propertyInt("spinBox_Find_Dec", "value", Pulsar2.iFindRateDecStored);
+        dx->propertyInt("spinBox_Slew_RA", "value", Pulsar2.iSlewRateRAStored);
+        dx->propertyInt("spinBox_Slew_Dec", "value", Pulsar2.iSlewRateDecStored);
 
-//        dx->propertyInt("horizontalSlider_Verbosity", "value", iLoggingVerbosity);
-//        Pulsar2.iVerbosity = iLoggingVerbosity;
-		
+        Pulsar2.bSyncTimeOnConnectStored = dx->isChecked("checkBox_syncTime");
+        Pulsar2.bSyncLocationOnConnectStored = dx->isChecked("checkBox_syncLocation");
+
+        
         // Save configuration to ini file
-		if (m_pIniUtil)
+        if (m_pIniUtil)
         {
-            m_pIniUtil->writeDouble(PARENT_KEY_STRING, PULSAR2_HOURS_EAST,  dHoursEastStored);
-            m_pIniUtil->writeDouble(PARENT_KEY_STRING, PULSAR2_HOURS_WEST,  dHoursWestStored);
-            m_pIniUtil->writeDouble(PARENT_KEY_STRING, PULSAR2_FLIPHOUR,  dFlipHourStored);
-            m_pIniUtil->writeInt(PARENT_KEY_STRING, PULSAR2_MERIDIAN,  iMeridianBehaviourStored);
-//            m_pIniUtil->writeInt(PARENT_KEY_STRING, PULSAR2_VERBOSITY, iLoggingVerbosity);
+            m_pIniUtil->writeDouble(PARENT_KEY_STRING, PULSAR2_HOURS_EAST,  Pulsar2.dHoursEastStored);
+            m_pIniUtil->writeDouble(PARENT_KEY_STRING, PULSAR2_HOURS_WEST,  Pulsar2.dHoursWestStored);
+            m_pIniUtil->writeDouble(PARENT_KEY_STRING, PULSAR2_FLIPHOUR,  Pulsar2.dFlipHourStored);
+            m_pIniUtil->writeInt(PARENT_KEY_STRING, PULSAR2_MERIDIAN,  Pulsar2.iMeridianBehaviourStored);
+
+            m_pIniUtil->writeDouble(PARENT_KEY_STRING, PULSAR2_GUIDE_RA, Pulsar2.dGuideRateRAStored);
+            m_pIniUtil->writeDouble(PARENT_KEY_STRING, PULSAR2_GUIDE_DEC, Pulsar2.dGuideRateDecStored);
+            m_pIniUtil->writeInt(PARENT_KEY_STRING, PULSAR2_CENTRE_RA, Pulsar2.iCentreRateRAStored);
+            m_pIniUtil->writeInt(PARENT_KEY_STRING, PULSAR2_CENTRE_DEC, Pulsar2.iCentreRateDecStored);
+            m_pIniUtil->writeInt(PARENT_KEY_STRING, PULSAR2_FIND_RA, Pulsar2.iFindRateRAStored);
+            m_pIniUtil->writeInt(PARENT_KEY_STRING, PULSAR2_FIND_DEC, Pulsar2.iFindRateDecStored);
+            m_pIniUtil->writeInt(PARENT_KEY_STRING, PULSAR2_SLEW_RA, Pulsar2.iSlewRateRAStored);
+            m_pIniUtil->writeInt(PARENT_KEY_STRING, PULSAR2_SLEW_DEC, Pulsar2.iSlewRateDecStored);
+            m_pIniUtil->writeInt(PARENT_KEY_STRING, PULSAR2_SYNC_TIME, Pulsar2.bSyncTimeOnConnectStored);
+            m_pIniUtil->writeInt(PARENT_KEY_STRING, PULSAR2_SYNC_LOCATION, Pulsar2.bSyncLocationOnConnectStored);
+           
         }
     }
     
-	return nErr;
-   
+    return nErr;
+    
 }
 
 ////////////////////////////////////////////////////////////////////////////

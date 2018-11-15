@@ -22,6 +22,8 @@ CPulsar2Controller::CPulsar2Controller(void)
     m_bIsParked = false;  // added by CRF
     m_bAtHome = false;  // added by Rodolphe
     
+    swapTubeCommandIssued = false;
+    
 #ifdef PULSAR2_DEBUG
 #if defined(SB_WIN_BUILD)
     m_sLogfilePath = getenv("HOMEDRIVE");
@@ -64,7 +66,7 @@ int CPulsar2Controller::connect(const char *szPort)
 //
 {
     int nErr = SB_OK;
-
+    
     m_bIsConnected = true;
     nErr = m_pSerx->open(szPort, 38400, SerXInterface::B_NOPARITY);
     if(nErr != SB_OK) {
@@ -78,8 +80,8 @@ int CPulsar2Controller::connect(const char *szPort)
     fprintf(Logfile, "[%s] [CPulsar2Controller::Connect] Opened serial port OK\n", timestamp);
     fflush(Logfile);
 #endif
-
-
+    
+    
     // Validate that we are talking to a Pulsar2 by
     // getting the firmware version.
     // If this doesn't work
@@ -96,18 +98,18 @@ int CPulsar2Controller::connect(const char *szPort)
 #endif
         m_pSerx->close();
         m_bIsConnected = false;
-     }
+    }
     else {
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s] [CPulsar2Controller::Connect] Firmware check OK.\n", timestamp);
-    fflush(Logfile);
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::Connect] Firmware check OK.\n", timestamp);
+        fflush(Logfile);
 #endif
     }
     
-     // Now that we are connected, switch the refraction correction off
+    // Now that we are connected, switch the refraction correction off
     nErr = setRefractionCorrection(false);
     if(nErr) {
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
@@ -128,52 +130,55 @@ int CPulsar2Controller::connect(const char *szPort)
         fflush(Logfile);
 #endif
     }
-
-    // set the Pulsar2 time to TSX time
-/*
- nErr = setDateAndTime();                  // leave it off for now to check clock stability
-    if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CPulsar2Controller::Connect] Error setting date and time\n", timestamp);
-        fflush(Logfile);
-#endif
-        return nErr;
-    }
-*/
     
-    // set the Pulsar2 location to TSX location
+    // set the Pulsar2 time to TSX time, if required in the user dialog
+    /*
+    if (bSyncTimeOnConnectStored) {
+        nErr = setDateAndTime();                  // leave it off for now to check clock stability
+        if(nErr) {
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s] [CPulsar2Controller::Connect] Now set location.\n", timestamp);
-    fflush(Logfile);
+            ltime = time(NULL);
+            timestamp = asctime(localtime(&ltime));
+            timestamp[strlen(timestamp) - 1] = 0;
+            fprintf(Logfile, "[%s] [CPulsar2Controller::Connect] Error setting date and time\n", timestamp);
+            fflush(Logfile);
 #endif
+            return nErr;
+        }
+    }
+    */
     
-   nErr = setLocation();
-    if(nErr) {
+    // set the Pulsar2 location to TSX location, if required in the user dialog
+    if (bSyncLocationOnConnectStored) {
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CPulsar2Controller::Connect] Error setting location\n", timestamp);
+        fprintf(Logfile, "[%s] [CPulsar2Controller::Connect] Now set location.\n", timestamp);
         fflush(Logfile);
 #endif
-        return nErr;
-    }
-    else {
+        
+        nErr = setLocation();
+        if(nErr) {
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CPulsar2Controller::Connect] Location setting OK.\n", timestamp);
-        fflush(Logfile);
+            ltime = time(NULL);
+            timestamp = asctime(localtime(&ltime));
+            timestamp[strlen(timestamp) - 1] = 0;
+            fprintf(Logfile, "[%s] [CPulsar2Controller::Connect] Error setting location\n", timestamp);
+            fflush(Logfile);
 #endif
+            return nErr;
+        }
+        else {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
+            ltime = time(NULL);
+            timestamp = asctime(localtime(&ltime));
+            timestamp[strlen(timestamp) - 1] = 0;
+            fprintf(Logfile, "[%s] [CPulsar2Controller::Connect] Location setting OK.\n", timestamp);
+            fflush(Logfile);
+#endif
+        }
     }
-
     
     return nErr;
 }
@@ -471,6 +476,116 @@ int CPulsar2Controller::getRADec(double &dRA, double &dDec)
     fflush(Logfile);
 #endif
     
+    //--------------------------------------------------------------------------------------------------------
+    // now, before finishing, check the hour angle and check against the meridian behaviour what to do with it
+    double currentHourAngle;
+    int currentRate;
+    int nPierSide;      // nPierSide is 0 for East and 1 for West, or -1 if the response was not understood
+    
+    nErr = getTracking(currentRate);  // first we need to find out if we're stopped already
+    if (nErr != OK) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::GetRADec] Error getting tracking rate: %i\n", timestamp, nErr);
+        fflush(Logfile);
+#endif
+        return nErr;
+    }
+    
+    nErr = getSideOfPier(nPierSide);      // we also need to check if the tube is already swapped (ie on the east side)
+    if (nErr != OK) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::GetRADec] Error getting pier side: %i\n", timestamp, nErr);
+        fflush(Logfile);
+#endif
+        return nErr;
+    }
+    
+    if (currentRate == STOPPED)
+        return nErr;
+    
+    currentHourAngle = m_pTsx->hourAngle(dRA);  // sign convention is negative to the east
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CPulsar2Controller::GetRADec] Hour Angle: %7.4f, Tracking Rate: %d, Pier Side: %d\n", timestamp, currentHourAngle, currentRate, nPierSide);
+    fflush(Logfile);
+#endif
+    switch (iMeridianBehaviourStored)
+    {
+        case 0:  // stop at meridian
+            if (currentHourAngle >= 0.0) {
+                nErr = setTrackingRate(STOPPED);
+                if (nErr != OK) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+                    ltime = time(NULL);
+                    timestamp = asctime(localtime(&ltime));
+                    timestamp[strlen(timestamp) - 1] = 0;
+                    fprintf(Logfile, "[%s] [CPulsar2Controller::GetRADec] Error stopping tracking: %i\n", timestamp, nErr);
+                    fflush(Logfile);
+#endif
+                    return nErr;
+                }
+            }
+            break;
+        case 1:  // flip at meridian, if not already flipped
+            if (currentHourAngle >= 0.0  && nPierSide == 1) {
+                if (!swapTubeCommandIssued) {
+                    nErr = commandTubeSwap();
+                    if (nErr != OK) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+                        ltime = time(NULL);
+                        timestamp = asctime(localtime(&ltime));
+                        timestamp[strlen(timestamp) - 1] = 0;
+                        fprintf(Logfile, "[%s] [CPulsar2Controller::GetRADec] Error swapping tube: %i\n", timestamp, nErr);
+                        fflush(Logfile);
+#endif
+                        return nErr;
+                    }
+                    swapTubeCommandIssued = true;
+                }
+            }
+            break;
+        case 2:  // stop at west limit
+            if (currentHourAngle >= dHoursWestStored) {
+                nErr = setTrackingRate(STOPPED);
+                if (nErr != OK) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+                    ltime = time(NULL);
+                    timestamp = asctime(localtime(&ltime));
+                    timestamp[strlen(timestamp) - 1] = 0;
+                    fprintf(Logfile, "[%s] [CPulsar2Controller::GetRADec] Error stopping tracking: %i\n", timestamp, nErr);
+                    fflush(Logfile);
+#endif
+                    return nErr;
+                }
+            }
+            break;
+        case 3:  // flip at (west) flip limit
+            if (currentHourAngle  >= dFlipHourStored  && nPierSide == 1) {
+                if (!swapTubeCommandIssued) {
+                    nErr = commandTubeSwap();
+                    if (nErr != OK) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+                        ltime = time(NULL);
+                        timestamp = asctime(localtime(&ltime));
+                        timestamp[strlen(timestamp) - 1] = 0;
+                        fprintf(Logfile, "[%s] [CPulsar2Controller::GetRADec] Error swapping tube: %i\n", timestamp, nErr);
+                        fflush(Logfile);
+#endif
+                        return nErr;
+                    }
+                    swapTubeCommandIssued = true;
+                }
+            }
+            break;
+    }
     return nErr;
 }
 
@@ -487,7 +602,8 @@ int CPulsar2Controller::getTracking(int &iTrackingRate)
 //      5 = user2
 //      6 = user3
 //
-// Firmware Validity: >= 4
+// Firmware Validity: = 4 for named rates
+//                    = 5 for custom rate
 //
 {
     int nErr = OK;
@@ -638,6 +754,7 @@ int CPulsar2Controller::getSideOfPier(int &nPierSide)
 //      true if it is NOT applied
 //      false if it is
 //
+// Since we always disable refraction adjustment in connect(), we could safely suppress this function
 // Firmware Validity: >= 4
 //
 
@@ -742,7 +859,7 @@ int CPulsar2Controller::setDateAndTime()
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s] [CPulsar2Controller::setDateAndTime] ISO8601 string: %s\n", timestamp, pszOut);
+        fprintf(Logfile, "[%s] [CPulsar2Controller::setDateAndTime] ISO8601 string: %s\n", timestamp, pszOut);
         fflush(Logfile);
 #endif
     
@@ -1094,7 +1211,7 @@ int CPulsar2Controller::setTrackingRate(int nRate)
 //////////////////////////////////////////////////////////////////////////////
 int CPulsar2Controller::setRefractionCorrection(bool bEnabled)
 //
-// Function used to enable ordisable the refraction correction
+// Function used to enable or disable the refraction correction
 //
 // Firmware Validity: >= 4
 //
@@ -1106,9 +1223,9 @@ int CPulsar2Controller::setRefractionCorrection(bool bEnabled)
     if(!m_bIsConnected)
         return ERR_NOLINK;
     if (bEnabled)
-        nErr = sendCommand(":YSR1,1#", szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
+        nErr = sendCommand("#:YSR1,1#", szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
     else
-        nErr = sendCommand(":YSR0,0#", szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
+        nErr = sendCommand("#:YSR0,0#", szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
 
     if(nErr) {
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
@@ -1131,6 +1248,53 @@ int CPulsar2Controller::setRefractionCorrection(bool bEnabled)
 #endif
     return nErr;
 }
+
+//////////////////////////////////////////////////////////////////////////////
+int CPulsar2Controller::commandTubeSwap()
+//
+// Command a tube swap crossing the meridian
+//
+// Firmware Validity: >= 4
+//
+
+{
+    int nErr = OK;
+    char szResp[SERIAL_BUFFER_SIZE];
+    
+    if(!m_bIsConnected)
+        return ERR_NOLINK;
+
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CPulsar2Controller::commandTubeSwap] Send #:YW# Swap Tube\n", timestamp);
+    fflush(Logfile);
+#endif
+        nErr = sendCommand("#:YW#", szResp, SERIAL_BUFFER_SIZE, 1, false);
+    
+    if(nErr) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::commandTubeSwap] Error in command: %s\n", timestamp, szResp);
+        fflush(Logfile);
+#endif
+        return nErr;
+    }
+    if(szResp[0]!='1')
+        nErr = ERR_CMDFAILED;
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CPulsar2Controller::commandTubeSwap] ERR_CMDFAILED: response = %s\n", timestamp, szResp);
+    fflush(Logfile);
+#endif
+    return nErr;
+}
+
 
 
 ////////////////////////////////////////////////////////////////////////////
@@ -1311,11 +1475,12 @@ int CPulsar2Controller::startSlew(const double& dRa, const double& dDec)
     
     // command returns 0# if the slew is OK, and #1 if there's a problem (typically, target below horizon)
     // (note that this was the wrong way around in the previous version)
-    if (szResp[0] == '0')
-        return SB_OK; // accepted
-    else
+    if (szResp[0] != '0')
         return ERR_LX200DESTBELOWHORIZ;  // below horizon
     
+    // if all is well clear any previous flag preventing a tube swap
+    swapTubeCommandIssued = false;
+
     return nErr;
 }
 
@@ -1766,6 +1931,8 @@ int CPulsar2Controller::unPark()
         return nErr;
     }
     
+    swapTubeCommandIssued = false;
+
     return nErr;
 }
 
@@ -1852,6 +2019,17 @@ int CPulsar2Controller::parseFields(const char *pszIn, std::vector<std::string> 
     return nErr;
 }
 
+void        CPulsar2Controller::logMessage(char* cMethod, char* cMessage)
+{
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [%s] %s\n", timestamp, cMethod, cMessage);
+    fflush(Logfile);
+#endif
+
+}
 
 
 

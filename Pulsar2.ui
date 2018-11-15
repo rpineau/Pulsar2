@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>428</width>
-    <height>339</height>
+    <width>432</width>
+    <height>683</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -22,10 +22,10 @@
   <widget class="X2Form" name="X2Form">
    <property name="geometry">
     <rect>
-     <x>12</x>
-     <y>12</y>
-     <width>409</width>
-     <height>321</height>
+     <x>10</x>
+     <y>10</y>
+     <width>411</width>
+     <height>661</height>
     </rect>
    </property>
    <property name="sizePolicy">
@@ -40,12 +40,6 @@
      <height>0</height>
     </size>
    </property>
-   <property name="maximumSize">
-    <size>
-     <width>440</width>
-     <height>390</height>
-    </size>
-   </property>
    <property name="frameShape">
     <enum>QFrame::StyledPanel</enum>
    </property>
@@ -55,10 +49,10 @@
    <widget class="QGroupBox" name="groupBox_4">
     <property name="geometry">
      <rect>
-      <x>8</x>
+      <x>10</x>
       <y>0</y>
       <width>392</width>
-      <height>280</height>
+      <height>611</height>
      </rect>
     </property>
     <property name="maximumSize">
@@ -70,172 +64,383 @@
     <property name="title">
      <string>Advanced Settings</string>
     </property>
-    <widget class="QLabel" name="label_3">
-     <property name="geometry">
-      <rect>
-       <x>24</x>
-       <y>168</y>
-       <width>248</width>
-       <height>24</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>Possible hours past meridian (West) :</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-     </property>
-    </widget>
-    <widget class="QLabel" name="label">
-     <property name="geometry">
-      <rect>
-       <x>24</x>
-       <y>136</y>
-       <width>248</width>
-       <height>24</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>Possible hours past meridian (East) :</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-     </property>
-    </widget>
-    <widget class="QLabel" name="label_2">
-     <property name="geometry">
-      <rect>
-       <x>16</x>
-       <y>200</y>
-       <width>256</width>
-       <height>24</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>Hour Angle for automatic telescope flip :</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-     </property>
-    </widget>
-    <widget class="QDoubleSpinBox" name="doubleSpinBox_HoursEast">
-     <property name="geometry">
-      <rect>
-       <x>280</x>
-       <y>136</y>
-       <width>80</width>
-       <height>24</height>
-      </rect>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-     </property>
-     <property name="maximum">
-      <double>6.000000000000000</double>
-     </property>
-     <property name="singleStep">
-      <double>0.100000000000000</double>
-     </property>
-    </widget>
-    <widget class="QDoubleSpinBox" name="doubleSpinBox_HoursWest">
-     <property name="geometry">
-      <rect>
-       <x>280</x>
-       <y>168</y>
-       <width>80</width>
-       <height>24</height>
-      </rect>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-     </property>
-     <property name="maximum">
-      <double>6.000000000000000</double>
-     </property>
-     <property name="singleStep">
-      <double>0.100000000000000</double>
-     </property>
-    </widget>
-    <widget class="QDoubleSpinBox" name="doubleSpinBox_HourFlip">
-     <property name="geometry">
-      <rect>
-       <x>280</x>
-       <y>200</y>
-       <width>80</width>
-       <height>24</height>
-      </rect>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-     </property>
-     <property name="minimum">
-      <double>-4.000000000000000</double>
-     </property>
-     <property name="maximum">
-      <double>4.000000000000000</double>
-     </property>
-     <property name="singleStep">
-      <double>0.100000000000000</double>
-     </property>
-    </widget>
     <widget class="QGroupBox" name="groupBox">
      <property name="geometry">
       <rect>
        <x>16</x>
        <y>24</y>
        <width>360</width>
-       <height>104</height>
+       <height>130</height>
       </rect>
      </property>
      <property name="title">
-      <string>Meridian Treatment in Controller:</string>
+      <string>Meridian Behaviour:</string>
      </property>
-     <widget class="QRadioButton" name="radioButton_Stop">
-      <property name="geometry">
-       <rect>
-        <x>16</x>
-        <y>24</y>
-        <width>160</width>
-        <height>24</height>
-       </rect>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <property name="spacing">
+       <number>5</number>
       </property>
-      <property name="text">
-       <string>Stop Tracking</string>
+      <property name="topMargin">
+       <number>5</number>
       </property>
-     </widget>
-     <widget class="QRadioButton" name="radioButton_Flip">
-      <property name="geometry">
-       <rect>
-        <x>16</x>
-        <y>48</y>
-        <width>160</width>
-        <height>24</height>
-       </rect>
+      <property name="bottomMargin">
+       <number>5</number>
       </property>
-      <property name="text">
-       <string>Telescope Flip</string>
+      <item>
+       <widget class="QRadioButton" name="radioButton_Stop">
+        <property name="text">
+         <string>Stop Tracking</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="radioButton_Flip">
+        <property name="text">
+         <string>Telescope Flip</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="radioButton_Continue_Stop">
+        <property name="text">
+         <string>Continue to Track with stop at West limit</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="radioButton_Continue_Flip">
+        <property name="text">
+         <string>Continue to Track with flip at specified Hour Angle</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+    <widget class="QGroupBox" name="groupBox_2">
+     <property name="geometry">
+      <rect>
+       <x>16</x>
+       <y>160</y>
+       <width>360</width>
+       <height>130</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>Meridian Values</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout">
+      <property name="topMargin">
+       <number>5</number>
       </property>
-     </widget>
-     <widget class="QRadioButton" name="radioButton_Continue">
-      <property name="geometry">
-       <rect>
-        <x>16</x>
-        <y>72</y>
-        <width>321</width>
-        <height>24</height>
-       </rect>
+      <property name="bottomMargin">
+       <number>5</number>
       </property>
-      <property name="text">
-       <string>Continue to Track (this is always true in Pulsar2)</string>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Possible hours past meridian (East) :</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QDoubleSpinBox" name="doubleSpinBox_HoursEast">
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+        <property name="maximum">
+         <double>6.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_3">
+        <property name="text">
+         <string>Possible hours past meridian (West) :</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QDoubleSpinBox" name="doubleSpinBox_HoursWest">
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+        <property name="maximum">
+         <double>6.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>Hour Angle for automatic telescope flip :</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QDoubleSpinBox" name="doubleSpinBox_HourFlip">
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+        <property name="minimum">
+         <double>-4.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>4.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+    <widget class="QGroupBox" name="groupBox_3">
+     <property name="geometry">
+      <rect>
+       <x>16</x>
+       <y>300</y>
+       <width>360</width>
+       <height>200</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>Set Rates:</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="0" column="1">
+       <widget class="QLabel" name="label_8">
+        <property name="text">
+         <string>RA</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QLabel" name="label_9">
+        <property name="text">
+         <string>Dec</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_4">
+        <property name="text">
+         <string>Guide (0.1 - 0.9 x sidereal) :</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QDoubleSpinBox" name="doubleSpinBox_GuideRA">
+        <property name="decimals">
+         <number>1</number>
+        </property>
+        <property name="minimum">
+         <double>0.100000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>0.900000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+        <property name="value">
+         <double>0.300000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="QDoubleSpinBox" name="doubleSpinBox__GuideDec">
+        <property name="decimals">
+         <number>1</number>
+        </property>
+        <property name="minimum">
+         <double>0.100000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>0.900000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+        <property name="value">
+         <double>0.300000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_5">
+        <property name="text">
+         <string>Centre (1 - 999 x sidereal) :</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QSpinBox" name="spinBox_CentreRA">
+        <property name="minimum">
+         <number>1</number>
+        </property>
+        <property name="maximum">
+         <number>999</number>
+        </property>
+        <property name="value">
+         <number>20</number>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="2">
+       <widget class="QSpinBox" name="spinBox_CentreDec">
+        <property name="minimum">
+         <number>1</number>
+        </property>
+        <property name="maximum">
+         <number>999</number>
+        </property>
+        <property name="value">
+         <number>20</number>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_6">
+        <property name="text">
+         <string>Find (1 - 999 x sidereal) :</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QSpinBox" name="spinBox_FindRA">
+        <property name="minimum">
+         <number>1</number>
+        </property>
+        <property name="maximum">
+         <number>999</number>
+        </property>
+        <property name="value">
+         <number>50</number>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="2">
+       <widget class="QSpinBox" name="spinBox_FindDec">
+        <property name="minimum">
+         <number>1</number>
+        </property>
+        <property name="maximum">
+         <number>999</number>
+        </property>
+        <property name="value">
+         <number>50</number>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="QLabel" name="label_7">
+        <property name="text">
+         <string>Slew (1 - 999 x sidereal) :</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="QSpinBox" name="spinBox_SlewRA">
+        <property name="minimum">
+         <number>1</number>
+        </property>
+        <property name="maximum">
+         <number>999</number>
+        </property>
+        <property name="value">
+         <number>750</number>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="2">
+       <widget class="QSpinBox" name="spinBox_SlewDec">
+        <property name="minimum">
+         <number>1</number>
+        </property>
+        <property name="maximum">
+         <number>999</number>
+        </property>
+        <property name="value">
+         <number>750</number>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+    <widget class="QGroupBox" name="groupBox_5">
+     <property name="geometry">
+      <rect>
+       <x>16</x>
+       <y>510</y>
+       <width>360</width>
+       <height>83</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>Synchronisation on Connect</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_3">
+      <property name="topMargin">
+       <number>5</number>
       </property>
-     </widget>
+      <property name="bottomMargin">
+       <number>5</number>
+      </property>
+      <item row="0" column="0">
+       <widget class="QCheckBox" name="checkBox_syncTime">
+        <property name="text">
+         <string>Mount syncs to TheSkyX time</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QCheckBox" name="checkBox_syncLocation">
+        <property name="text">
+         <string>Mount syncs to TheSkyX location</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </widget>
    <widget class="QPushButton" name="pushButtonOK">
     <property name="geometry">
      <rect>
-      <x>312</x>
-      <y>288</y>
+      <x>310</x>
+      <y>620</y>
       <width>81</width>
       <height>24</height>
      </rect>
@@ -247,8 +452,8 @@
    <widget class="QPushButton" name="pushButtonCancel">
     <property name="geometry">
      <rect>
-      <x>224</x>
-      <y>288</y>
+      <x>220</x>
+      <y>620</y>
       <width>81</width>
       <height>24</height>
      </rect>

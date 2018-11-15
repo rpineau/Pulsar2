@@ -38,8 +38,17 @@
 #define PULSAR2_FLIPHOUR            "FLIPHOUR"
 #define PULSAR2_HOURS_EAST          "HOURSEAST"
 #define PULSAR2_HOURS_WEST          "HOURSWEST"
-#define PULSAR2_REFRACTION          "REFRACTION"
-//#define PULSAR2_VERBOSITY         "VERBOSITY"
+// #define PULSAR2_REFRACTION          "REFRACTION"
+#define PULSAR2_GUIDE_RA            "GUIDE_RA"
+#define PULSAR2_GUIDE_DEC           "GUIDE_DEC"
+#define PULSAR2_CENTRE_RA           "CENTRE_RA"
+#define PULSAR2_CENTRE_DEC          "CENTRE_DEC"
+#define PULSAR2_FIND_RA             "FIND_RA"
+#define PULSAR2_FIND_DEC            "FIND_DEC"
+#define PULSAR2_SLEW_RA             "SLEW_RA"
+#define PULSAR2_SLEW_DEC            "SLEW_DEC"
+#define PULSAR2_SYNC_TIME           "SYNC_TIME"
+#define PULSAR2_SYNC_LOCATION       "SYNC_LOCATION"
 
 enum DEBUG_LEVEL {NONE = 0, METHOD, VERBOSE};
 
@@ -57,6 +66,17 @@ enum DEBUG_LEVEL {NONE = 0, METHOD, VERBOSE};
 #define X2_MOUNT_NAME       "X2 Pulsar2"
 #define DRIVER_VERSION      1.0
 #define DISPLAY_NAME        "Pulsar2 X2 Plug-In by Richard Francis"
+
+
+#define RA_RATE_STOPPED     15.0410681
+#define DEC_RATE_STOPPED    0.0
+#define RA_RATE_SIDEREAL    0.0
+#define DEC_RATE_SIDEREAL   0.0
+#define RA_RATE_LUNAR       0.5490149
+#define DEC_RATE_LUNAR      0.0
+#define RA_RATE_SOLAR       0.0410681
+#define DEC_RATE_SOLAR      0.0
+
 
 class X2Mount : public MountDriverInterface
                 ,public SyncMountInterface
@@ -140,7 +160,7 @@ public:
 	virtual int beyondThePole(bool& bYes);
 	virtual double flipHourAngle();
 	virtual int gemLimits(double& dHoursEast, double& dHoursWest);
-
+    
 	//OpenLoopMoveInterface
 	virtual int								startOpenLoopMove(const MountDriverInterface::MoveDir& Dir, const int& nRateIndex);
 	virtual int								endOpenLoopMove(void)															;
@@ -191,8 +211,23 @@ public:
     virtual bool                    isParityFixed() const        {return true;}
 
 
-// Implementation
-
+// Stored parameters
+/*
+    double                                  dHoursEastStored;
+    double                                  dHoursWestStored;
+    double                                  dFlipHourStored;
+    int                                     iMeridianBehaviourStored;
+    double                                  dGuideRateRAStored;
+    double                                  dGuideRateDecStored;
+    int                                     iCentreRateRAStored;
+    int                                     iCentreRateDecStored;
+    int                                     iFindRateRAStored;
+    int                                     iFindRateDecStored;
+    int                                     iSlewRateRAStored;
+    int                                     iSlewRateDecStored;
+    bool                                    bSyncTimeOnConnectStored;
+    bool                                    bSyncLocationOnConnectStored;
+*/
 
 private:
 
@@ -218,12 +253,10 @@ private:
     
 //    int                                     iLastPosition;
     char                                    serialName[256];
-    double                                  dHoursEastStored;
-    double                                  dHoursWestStored;
-    double                                  dFlipHourStored;
-    int                                     iMeridianBehaviourStored;
+    
     int                                     iLoggingVerbosity;
     
+/*
     // the following are used to cache the requested values for solar and lunar rates, since TSX has instantaneous values
     // for these, unlike the average values in the Pulsar2 firmware. They are used to return the values set by TSX
     // when commandig Solar or Lunar rate. However, the Pulsar2 itself continues to use its pre-programmed average
@@ -233,6 +266,7 @@ private:
     double dCommandedDecsolarRate = 0.0;        // queried before being set (they are queried every 1 sec)
     double dCommandedRAlunarRate = 0.5490149;
     double dCommandedDeclunarRate = 0.0;
+*/
     
     MountDriverInterface::MoveDir           currentMoveDir;
 
