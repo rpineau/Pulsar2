@@ -1190,6 +1190,50 @@ int X2Mount::execModalSettingsDialog(void)
 ////////////////////////////////////////////////////////////////////////////
 void X2Mount::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
 {
+    int nErr = SB_OK;
+    double dRa, dDec;
+    char szTmpBuf[SERIAL_BUFFER_SIZE];
+
+    if (!strcmp(pszEvent, "on_pushButton_clicked")) { // Guide (0.1 - 0.9 x sidereal)
+        uiex->propertyDouble("doubleSpinBox_GuideRA", "value", dRa);
+        uiex->propertyDouble("doubleSpinBox_GuideDec", "value", dDec);
+        // nErr = Pulsar2.setGuidingRates(dRa, dDec); -> need to implement this
+        if(nErr){
+            snprintf(szTmpBuf, SERIAL_BUFFER_SIZE, "Error setting guide rates to %3.2f : %3.2f", dRa, dDec);
+            uiex->messageBox("Error", szTmpBuf);
+            return;
+        }
+    }
+    else if (!strcmp(pszEvent, "on_pushButton_2_clicked")) { // Centre (1 - 999 x sidereal)
+        uiex->propertyDouble("doubleSpinBox_CenterRA", "value", dRa);
+        uiex->propertyDouble("doubleSpinBox_CenterDec", "value", dDec);
+        // nErr = Pulsar2.setCenterRates(dRa, dDec); -> need to implement this
+        if(nErr){
+            snprintf(szTmpBuf, SERIAL_BUFFER_SIZE, "Error setting center rates to %3.2f : %3.2f", dRa, dDec);
+            uiex->messageBox("Error", szTmpBuf);
+            return;
+        }
+    }
+    else if (!strcmp(pszEvent, "on_pushButton_3_clicked")) { // Find (1 - 999 x sidereal)
+        uiex->propertyDouble("doubleSpinBox_FindRA", "value", dRa);
+        uiex->propertyDouble("doubleSpinBox_FindDec", "value", dDec);
+        // nErr = Pulsar2.setFindRates(dRa, dDec); -> need to implement this
+        if(nErr){
+            snprintf(szTmpBuf, SERIAL_BUFFER_SIZE, "Error setting guide rate to %3.2f : %3.2f", dRa, dDec);
+            uiex->messageBox("Error", szTmpBuf);
+            return;
+        }
+    }
+    else if (!strcmp(pszEvent, "on_pushButton_4_clicked")) { // Slew (1 - 999 x sidereal)
+        uiex->propertyDouble("doubleSpinBox_SlewRA", "value", dRa);
+        uiex->propertyDouble("doubleSpinBox_SlewDec", "value", dDec);
+        // nErr = Pulsar2.setSlewRates(dRa, dDec); -> need to implement this
+        if(nErr){
+            snprintf(szTmpBuf, SERIAL_BUFFER_SIZE, "Error setting slew rate to %3.2f : %3.2f", dRa, dDec);
+            uiex->messageBox("Error", szTmpBuf);
+            return;
+        }
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////
