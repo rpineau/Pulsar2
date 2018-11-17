@@ -133,6 +133,13 @@ int CPulsar2Controller::connect(const char *szPort)
     
     // set the Pulsar2 time to TSX time, if required in the user dialog
     if (bSyncTimeOnConnectStored) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::Connect] Set time.\n", timestamp);
+        fflush(Logfile);
+#endif
         nErr = setDateAndTime();
         if(nErr) {
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS

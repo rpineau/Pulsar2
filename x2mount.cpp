@@ -1109,7 +1109,7 @@ int X2Mount::execModalSettingsDialog(void)
     
     //  Set Rates
     dx->setPropertyDouble("doubleSpinBox_Guide_RA", "value", Pulsar2.dGuideRateRAStored);
-    dx->setPropertyDouble("doubleSpinBox_GuideDec", "value", Pulsar2.dGuideRateDecStored);
+    dx->setPropertyDouble("doubleSpinBox_Guide_Dec", "value", Pulsar2.dGuideRateDecStored);
     dx->setPropertyInt("spinBox_Centre_RA", "value", Pulsar2.iCentreRateRAStored);
     dx->setPropertyInt("spinBox_Centre_Dec", "value", Pulsar2.iCentreRateDecStored);
     dx->setPropertyInt("spinBox_Find_RA", "value", Pulsar2.iFindRateRAStored);
