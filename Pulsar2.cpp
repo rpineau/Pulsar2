@@ -1551,7 +1551,7 @@ int CPulsar2Controller::setRefractionCorrection(bool bEnabled)
         nErr = sendCommand("#:YSR1,1#", szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
     else
         nErr = sendCommand("#:YSR0,0#", szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
-
+    
     if(nErr) {
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
@@ -1562,15 +1562,16 @@ int CPulsar2Controller::setRefractionCorrection(bool bEnabled)
 #endif
         return nErr;
     }
-    if(szResp[0] == '0')
+    if(szResp[0] == '0') {
         nErr = ERR_CMDFAILED;
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s] [CPulsar2Controller::setRefractionCorrection] ERR_CMDFAILED: szResp[0] = %c: Err = %d\n", timestamp, szResp[0], nErr);
-    fflush(Logfile);
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::setRefractionCorrection] ERR_CMDFAILED: szResp[0] = %c: Err = %d\n", timestamp, szResp[0], nErr);
+        fflush(Logfile);
 #endif
+    }
     return nErr;
 }
 
