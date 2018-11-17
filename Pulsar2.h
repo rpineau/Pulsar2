@@ -87,6 +87,7 @@ class CPulsar2Controller
         
         int         stopSlew(void);                                         // not tested (not called by TSX)
         int         getRADec(double &dRA, double &dDec);                    // Works
+        int         getAltAz(double &dAlt, double &dAz);                    // not tested
         int         toggleFormat();                                         // Works
 
         int         setRefractionCorrection(bool bEnabled);                 // Works
@@ -110,12 +111,23 @@ class CPulsar2Controller
 
         int         park(const double& dAz, const double& dAlt);            // Works
         int         unPark();                                               // Works
-        int         parkStatus(bool &isParked);                             // Works
+        int         parkIsParked(bool &isParked);                           // Works
+        int         parkIsParking(bool &isParking);                         // not tested
+        int         parkIsParkDefined(bool &isParkSet);                     // not tested
+        int         parkSetParkPosition();                                  // not tested
 
         int         setDateAndTime();                                       // not tested
         int         setLocation();                                          // Works
 
         int         setRAdec(const double &dRA, const double &dDec);        // Works
+        
+        int         setGuideRates(int iRa, int iDec);                       // not tested
+        int         setCentreRates(int iRa, int iDec);                      // not tested
+        int         setFindRates(int iRa, int iDec);                        // not tested
+        int         setSlewRates(int iRa, int iDec);                        // not tested
+        int         setGoToRates(int iRa, int iDec);                        // not tested and not used
+        
+        int         setParkPosition(double &dAlt, double &dAz);             // not tested)
 
         ////////////////////////////////////////////////////////////////
 
@@ -162,6 +174,8 @@ class CPulsar2Controller
         
         double      raStringToDouble(char* cRaString);
         double      decStringToDouble(char* cDecString);
+        double      azStringToDouble(char* cAzString);
+        
         int         parseFields(const char *pszIn, std::vector<std::string> &svFields, char cSeparator);
         
         bool        m_bIsConnected;

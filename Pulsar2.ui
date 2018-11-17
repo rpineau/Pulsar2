@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>504</width>
-    <height>678</height>
+    <height>718</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -25,7 +25,7 @@
   <property name="maximumSize">
    <size>
     <width>504</width>
-    <height>678</height>
+    <height>718</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -37,7 +37,7 @@
      <x>10</x>
      <y>10</y>
      <width>480</width>
-     <height>648</height>
+     <height>698</height>
     </rect>
    </property>
    <property name="sizePolicy">
@@ -64,7 +64,7 @@
       <x>10</x>
       <y>0</y>
       <width>456</width>
-      <height>600</height>
+      <height>661</height>
      </rect>
     </property>
     <property name="maximumSize">
@@ -115,14 +115,14 @@
       <item>
        <widget class="QRadioButton" name="radioButton_Continue_Stop">
         <property name="text">
-         <string>Continue to Track with stop at West limit</string>
+         <string>Continue to Track with Stop at West limit</string>
         </property>
        </widget>
       </item>
       <item>
        <widget class="QRadioButton" name="radioButton_Continue_Flip">
         <property name="text">
-         <string>Continue to Track with flip at specified Hour Angle</string>
+         <string>Continue to Track with Flip at specified Hour Angle</string>
         </property>
        </widget>
       </item>
@@ -146,7 +146,7 @@
         <x>15</x>
         <y>32</y>
         <width>248</width>
-        <height>32</height>
+        <height>24</height>
        </rect>
       </property>
       <property name="text">
@@ -181,7 +181,7 @@
         <x>15</x>
         <y>64</y>
         <width>248</width>
-        <height>32</height>
+        <height>24</height>
        </rect>
       </property>
       <property name="text">
@@ -246,6 +246,32 @@
       </property>
       <property name="singleStep">
        <double>0.100000000000000</double>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_11">
+      <property name="geometry">
+       <rect>
+        <x>360</x>
+        <y>64</y>
+        <width>60</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Stop</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_12">
+      <property name="geometry">
+       <rect>
+        <x>360</x>
+        <y>96</y>
+        <width>60</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Flip</string>
       </property>
      </widget>
     </widget>
@@ -337,7 +363,7 @@
        <double>0.300000000000000</double>
       </property>
      </widget>
-     <widget class="QDoubleSpinBox" name="doubleSpinBox__GuideDec">
+     <widget class="QDoubleSpinBox" name="doubleSpinBox_GuideDec">
       <property name="geometry">
        <rect>
         <x>275</x>
@@ -399,6 +425,9 @@
       <property name="maximum">
        <number>999</number>
       </property>
+      <property name="singleStep">
+       <number>10</number>
+      </property>
       <property name="value">
        <number>20</number>
       </property>
@@ -420,6 +449,9 @@
       </property>
       <property name="maximum">
        <number>999</number>
+      </property>
+      <property name="singleStep">
+       <number>10</number>
       </property>
       <property name="value">
        <number>20</number>
@@ -459,6 +491,9 @@
       <property name="maximum">
        <number>999</number>
       </property>
+      <property name="singleStep">
+       <number>10</number>
+      </property>
       <property name="value">
        <number>50</number>
       </property>
@@ -480,6 +515,9 @@
       </property>
       <property name="maximum">
        <number>999</number>
+      </property>
+      <property name="singleStep">
+       <number>10</number>
       </property>
       <property name="value">
        <number>50</number>
@@ -519,8 +557,11 @@
       <property name="maximum">
        <number>999</number>
       </property>
+      <property name="singleStep">
+       <number>100</number>
+      </property>
       <property name="value">
-       <number>750</number>
+       <number>800</number>
       </property>
      </widget>
      <widget class="QSpinBox" name="spinBox_SlewDec">
@@ -541,8 +582,11 @@
       <property name="maximum">
        <number>999</number>
       </property>
+      <property name="singleStep">
+       <number>100</number>
+      </property>
       <property name="value">
-       <number>750</number>
+       <number>800</number>
       </property>
      </widget>
      <widget class="QPushButton" name="pushButton_4">
@@ -633,14 +677,53 @@
       </item>
      </layout>
     </widget>
+    <widget class="QGroupBox" name="groupBox_6">
+     <property name="geometry">
+      <rect>
+       <x>16</x>
+       <y>590</y>
+       <width>424</width>
+       <height>58</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>Park</string>
+     </property>
+     <widget class="QPushButton" name="pushButton_5">
+      <property name="geometry">
+       <rect>
+        <x>300</x>
+        <y>22</y>
+        <width>113</width>
+        <height>32</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Set Park</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_10">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>30</y>
+        <width>231</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Set Park position to current position</string>
+      </property>
+     </widget>
+    </widget>
    </widget>
    <widget class="QPushButton" name="pushButtonOK">
     <property name="geometry">
      <rect>
-      <x>310</x>
-      <y>608</y>
+      <x>390</x>
+      <y>665</y>
       <width>81</width>
-      <height>24</height>
+      <height>30</height>
      </rect>
     </property>
     <property name="text">
@@ -650,10 +733,10 @@
    <widget class="QPushButton" name="pushButtonCancel">
     <property name="geometry">
      <rect>
-      <x>220</x>
-      <y>608</y>
+      <x>300</x>
+      <y>665</y>
       <width>81</width>
-      <height>24</height>
+      <height>30</height>
      </rect>
     </property>
     <property name="text">
