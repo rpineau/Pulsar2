@@ -510,6 +510,8 @@ int CPulsar2Controller::getRADec(double &dRA, double &dDec)
 #endif
         return nErr;
     }
+    if (nPierSide == 0)  // nPierSide = 1 means that tube is on East side. We don't check against any limit on that side
+        return nErr;
     
     nErr = parkIsParking(bIsParking);   // check if the mount is currently parking, and bail out if it is
     if (nErr != OK) {
@@ -565,7 +567,7 @@ if (bIsParking)
             }
             break;
         case 1:  // flip at meridian, if not already flipped
-            if (currentHourAngle >= 0.0  && nPierSide == 1) {
+            if (currentHourAngle >= 0.0  && nPierSide == 1) {  // nPierSide should always be 1 as we bailed if == 0
                 if (!swapTubeCommandIssued) {
                     nErr = commandTubeSwap();
                     if (nErr != OK) {
@@ -598,7 +600,7 @@ if (bIsParking)
             }
             break;
         case 3:  // flip at (west) flip limit
-            if (currentHourAngle  >= dFlipHourStored  && nPierSide == 1) {
+            if (currentHourAngle  >= dFlipHourStored  && nPierSide == 1) {  // nPierSide should always be 1 as we bailed if == 0
                 if (!swapTubeCommandIssued) {
                     nErr = commandTubeSwap();
                     if (nErr != OK) {
@@ -2298,7 +2300,6 @@ int CPulsar2Controller::parkSetParkPosition()
     }
     
     // set park alt/az
-    // nErr = Pulsar2.setPark(dAlt, dAz);
     snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:YSX%+08.4f,%8.4f#", dAlt, dAz);
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
     ltime = time(NULL);
@@ -2307,7 +2308,7 @@ int CPulsar2Controller::parkSetParkPosition()
     fprintf(Logfile, "[%s] [CPulsar2Controller::parkSetParkPosition] Command sent is : %s\n", timestamp, szCommand);
     fflush(Logfile);
 #endif
-    nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE); // not extra # in response so 1 reponse read, 1 byte response.
+    nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
     if(nErr) {
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
         ltime = time(NULL);
