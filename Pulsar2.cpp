@@ -73,7 +73,7 @@ int CPulsar2Controller::connect(const char *szPort)
         m_bIsConnected = false;
         return nErr;    // return the actual error to TSX so it can display the error dialog.
     }
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -89,7 +89,7 @@ int CPulsar2Controller::connect(const char *szPort)
     
     nErr = getFirmware(m_szFirmware, SERIAL_BUFFER_SIZE);
     if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -100,7 +100,7 @@ int CPulsar2Controller::connect(const char *szPort)
         m_bIsConnected = false;
     }
     else {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -112,7 +112,7 @@ int CPulsar2Controller::connect(const char *szPort)
     // Now that we are connected, switch the refraction correction off
     nErr = setRefractionCorrection(false);
     if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -122,7 +122,7 @@ int CPulsar2Controller::connect(const char *szPort)
         return nErr;
     }
     else {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -132,11 +132,10 @@ int CPulsar2Controller::connect(const char *szPort)
     }
     
     // set the Pulsar2 time to TSX time, if required in the user dialog
-    /*
     if (bSyncTimeOnConnectStored) {
-        nErr = setDateAndTime();                  // leave it off for now to check clock stability
+        nErr = setDateAndTime();
         if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
             ltime = time(NULL);
             timestamp = asctime(localtime(&ltime));
             timestamp[strlen(timestamp) - 1] = 0;
@@ -146,11 +145,10 @@ int CPulsar2Controller::connect(const char *szPort)
             return nErr;
         }
     }
-    */
     
     // set the Pulsar2 location to TSX location, if required in the user dialog
     if (bSyncLocationOnConnectStored) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -160,7 +158,7 @@ int CPulsar2Controller::connect(const char *szPort)
         
         nErr = setLocation();
         if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
             ltime = time(NULL);
             timestamp = asctime(localtime(&ltime));
             timestamp[strlen(timestamp) - 1] = 0;
@@ -170,7 +168,7 @@ int CPulsar2Controller::connect(const char *szPort)
             return nErr;
         }
         else {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
             ltime = time(NULL);
             timestamp = asctime(localtime(&ltime));
             timestamp[strlen(timestamp) - 1] = 0;
@@ -215,7 +213,7 @@ int CPulsar2Controller::sendCommand(const char *pszCmd, char *pszResult, int nRe
 
     m_pSerx->purgeTxRx();
     
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -372,7 +370,7 @@ int CPulsar2Controller::toggleFormat()
     if(nErr)
         return nErr;
     
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FUNCTION_TRACKING
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -416,7 +414,7 @@ int CPulsar2Controller::getRADec(double &dRA, double &dDec)
     if(nErr)
         return nErr;
     
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -426,7 +424,7 @@ int CPulsar2Controller::getRADec(double &dRA, double &dDec)
     
     dRA = raStringToDouble(szResp);
     
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -438,7 +436,7 @@ int CPulsar2Controller::getRADec(double &dRA, double &dDec)
     if(nErr)
         return nErr;
     
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -457,7 +455,7 @@ int CPulsar2Controller::getRADec(double &dRA, double &dDec)
         if(nErr)
             return nErr;
         
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -468,7 +466,7 @@ int CPulsar2Controller::getRADec(double &dRA, double &dDec)
     }
     
     dDec = decStringToDouble(szResp);
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -486,7 +484,7 @@ int CPulsar2Controller::getRADec(double &dRA, double &dDec)
     
     nErr = getTracking(currentRate);  // first we need to find out if we're stopped already
     if (nErr != OK) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -501,7 +499,7 @@ int CPulsar2Controller::getRADec(double &dRA, double &dDec)
     
     nErr = getSideOfPier(nPierSide);      // we also need to check if the tube is already swapped (ie on the east side)
     if (nErr != OK) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -515,7 +513,7 @@ int CPulsar2Controller::getRADec(double &dRA, double &dDec)
     
     nErr = parkIsParking(bIsParking);   // check if the mount is currently parking, and bail out if it is
     if (nErr != OK) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -529,7 +527,7 @@ if (bIsParking)
     
     nErr = slewStatus(bIsSlewing);      // finally check if the mount is currently slewing: bail out if it is
     if (nErr != OK) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -542,7 +540,7 @@ if (bIsParking)
         return nErr;
 
     currentHourAngle = m_pTsx->hourAngle(dRA);  // sign convention is negative to the east
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -555,7 +553,7 @@ if (bIsParking)
             if (currentHourAngle >= 0.0) {
                 nErr = setTrackingRate(STOPPED);
                 if (nErr != OK) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
                     ltime = time(NULL);
                     timestamp = asctime(localtime(&ltime));
                     timestamp[strlen(timestamp) - 1] = 0;
@@ -571,7 +569,7 @@ if (bIsParking)
                 if (!swapTubeCommandIssued) {
                     nErr = commandTubeSwap();
                     if (nErr != OK) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
                         ltime = time(NULL);
                         timestamp = asctime(localtime(&ltime));
                         timestamp[strlen(timestamp) - 1] = 0;
@@ -588,7 +586,7 @@ if (bIsParking)
             if (currentHourAngle >= dHoursWestStored) {
                 nErr = setTrackingRate(STOPPED);
                 if (nErr != OK) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
                     ltime = time(NULL);
                     timestamp = asctime(localtime(&ltime));
                     timestamp[strlen(timestamp) - 1] = 0;
@@ -604,7 +602,7 @@ if (bIsParking)
                 if (!swapTubeCommandIssued) {
                     nErr = commandTubeSwap();
                     if (nErr != OK) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
                         ltime = time(NULL);
                         timestamp = asctime(localtime(&ltime));
                         timestamp[strlen(timestamp) - 1] = 0;
@@ -643,7 +641,7 @@ int CPulsar2Controller::getAltAz(double &dAlt, double &dAz)
     if(nErr)
         return nErr;
     
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -653,7 +651,7 @@ int CPulsar2Controller::getAltAz(double &dAlt, double &dAz)
     
     dAlt = decStringToDouble(szResp);  // reuse the method for Dec strings as the format is equivalent
     
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -665,7 +663,7 @@ int CPulsar2Controller::getAltAz(double &dAlt, double &dAz)
     if(nErr)
         return nErr;
     
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -675,7 +673,7 @@ int CPulsar2Controller::getAltAz(double &dAlt, double &dAz)
     
     dAz = azStringToDouble(szResp);
     
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -714,7 +712,7 @@ int CPulsar2Controller::getTracking(int &iTrackingRate)
     
     nErr = sendCommand("#:YGS#", szResp, SERIAL_BUFFER_SIZE);
     if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -728,7 +726,7 @@ int CPulsar2Controller::getTracking(int &iTrackingRate)
     
     if (iTrackingRate < 4) {
       // standard tracking rate (stopped, sidereal, lunar, solar)
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -739,7 +737,7 @@ int CPulsar2Controller::getTracking(int &iTrackingRate)
    else {
         // user tracking rate, we should get the actual values
         // TODO : read user rate with #:YGZx#, x=(iTrackingRate-4)
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -770,7 +768,7 @@ int CPulsar2Controller::getFirmware(char *szFirmware, int nMaxStrSize)
      
     memset(szFirmware, 0, nMaxStrSize);
     nErr = sendCommand("#:YV#", szResp, SERIAL_BUFFER_SIZE);
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -783,7 +781,7 @@ int CPulsar2Controller::getFirmware(char *szFirmware, int nMaxStrSize)
     // Okay, we got something. Is it a valid looking firmware identifier?
     if (memcmp("PULSAR V", szResp, 8) != 0) {
         nErr = ERR_CMDFAILED;
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -820,7 +818,7 @@ int CPulsar2Controller::getSideOfPier(int &nPierSide)
     if(nErr)
         return nErr;
     
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -835,7 +833,7 @@ int CPulsar2Controller::getSideOfPier(int &nPierSide)
     else {
         nPierSide = -1;
         nErr = ERR_CMDFAILED;
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -847,6 +845,7 @@ int CPulsar2Controller::getSideOfPier(int &nPierSide)
 }
 
 //////////////////////////////////////////////////////////////////////////////
+int CPulsar2Controller::getRefractionCorrection(bool &bRefractionNeeded)
 // Find out if the Pulsar2 is correcting for refraction or not.
 // This can be changed by the user (though not via TSX) so is, in
 // principle, unknown
@@ -854,11 +853,8 @@ int CPulsar2Controller::getSideOfPier(int &nPierSide)
 //      true if it is NOT applied
 //      false if it is
 //
-// Since we always disable refraction adjustment in connect(), we could safely suppress this function
 // Firmware Validity: >= 4
 //
-
-int CPulsar2Controller::getRefractionCorrection(bool &bRefractionNeeded)
 {
     int nErr = OK;
     char szResp[SERIAL_BUFFER_SIZE];
@@ -870,7 +866,7 @@ int CPulsar2Controller::getRefractionCorrection(bool &bRefractionNeeded)
     if(nErr)
         return nErr;
     
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -890,7 +886,7 @@ int CPulsar2Controller::getRefractionCorrection(bool &bRefractionNeeded)
     else {
         bRefractionNeeded = true;  // it has to be one or the other ...
         nErr = ERR_CMDFAILED;
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -955,7 +951,7 @@ int CPulsar2Controller::setDateAndTime()
     // It's probably the second of these, but by just using the string after the "T"
     // we can be relatively immune to variations.
     m_pTsx->utInISO8601(pszOut, N_OUT_MAXSIZE);
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -978,7 +974,7 @@ int CPulsar2Controller::setDateAndTime()
     cUtcUsDateString[4] = cUtcDateString[9];
     cUtcUsDateString[6] = cUtcDateString[2];
     cUtcUsDateString[7] = cUtcDateString[3];
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -993,7 +989,7 @@ int CPulsar2Controller::setDateAndTime()
     snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:SC %s#", cUtcUsDateString);
     nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true);  // not extra # in response so 1 reponse read, 1 byte response.
     if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -1005,7 +1001,7 @@ int CPulsar2Controller::setDateAndTime()
     
     // Now the time
     strncpy(cUtcTimeString, pszOut+11, 8);  // this should point to the time code which starts 11 bytes in from the start
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -1017,7 +1013,7 @@ int CPulsar2Controller::setDateAndTime()
     snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:SL %s#", cUtcTimeString);
     nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1 ,true);   // not extra # in response so 1 reponse read, 1 byte response.
     if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -1052,7 +1048,7 @@ int CPulsar2Controller::setLocation()
     
     // get longitude
     dLongitude = m_pTsx->longitude();  // TSX has the same inverted logic on longitudes (west = positive) as Pulsar2
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -1078,7 +1074,7 @@ int CPulsar2Controller::setLocation()
     if(!m_bIsConnected)
         return ERR_NOLINK;
     
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -1089,7 +1085,7 @@ int CPulsar2Controller::setLocation()
     snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:Sg %03d*%02d:%02d#", iDeg, iMin, iSec); // in the form #:Sg 359*29:44#
     nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
     if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -1112,7 +1108,7 @@ int CPulsar2Controller::setLocation()
     iMin = (int)floor((dLatitude-(double)iDeg)*60.0);
     iSec = (int)floor((((dLatitude-(double)iDeg)*60.0)-(double)iMin)*60.0);
  
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -1124,7 +1120,7 @@ int CPulsar2Controller::setLocation()
     snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:St %+02d*%02d:%02d#", iDeg, iMin, iSec); // in the form #:St +43*57:58#
     nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
     if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -1175,7 +1171,7 @@ int CPulsar2Controller::setRAdec(const double &dRA, const double &dDec)
     
     nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
     if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -1186,7 +1182,7 @@ int CPulsar2Controller::setRAdec(const double &dRA, const double &dDec)
     }
     
     if (szResp[0] != '1') {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -1194,7 +1190,7 @@ int CPulsar2Controller::setRAdec(const double &dRA, const double &dDec)
         fflush(Logfile);
 #endif
         nErr = ERR_CMDFAILED;
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -1221,7 +1217,7 @@ int CPulsar2Controller::setRAdec(const double &dRA, const double &dDec)
     snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:Sd %1c%02i*%02i:%02i#", cDecs, iDechh, iDecmm, iDecss);
     nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
     if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -1232,7 +1228,7 @@ int CPulsar2Controller::setRAdec(const double &dRA, const double &dDec)
     }
     
     if (szResp[0] != '1') {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -1240,7 +1236,7 @@ int CPulsar2Controller::setRAdec(const double &dRA, const double &dDec)
         fflush(Logfile);
 #endif
         nErr = ERR_CMDFAILED;
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -1282,7 +1278,7 @@ int CPulsar2Controller::setTrackingRate(int nRate)
     
     nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
     if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -1294,7 +1290,7 @@ int CPulsar2Controller::setTrackingRate(int nRate)
     
     if (szResp[0] != '1'){
         nErr = ERR_CMDFAILED;
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -1327,7 +1323,7 @@ int         CPulsar2Controller::setGuideRates(int iRa, int iDec)
     
     nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
     if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -1339,7 +1335,7 @@ int         CPulsar2Controller::setGuideRates(int iRa, int iDec)
     
     if (szResp[0] != '1'){
         nErr = ERR_CMDFAILED;
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -1371,7 +1367,7 @@ int         CPulsar2Controller::setCentreRates(int iRa, int iDec)
         
         nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
         if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
             ltime = time(NULL);
             timestamp = asctime(localtime(&ltime));
             timestamp[strlen(timestamp) - 1] = 0;
@@ -1383,7 +1379,7 @@ int         CPulsar2Controller::setCentreRates(int iRa, int iDec)
         
         if (szResp[0] != '1'){
             nErr = ERR_CMDFAILED;
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
             ltime = time(NULL);
             timestamp = asctime(localtime(&ltime));
             timestamp[strlen(timestamp) - 1] = 0;
@@ -1415,7 +1411,7 @@ int         CPulsar2Controller::setFindRates(int iRa, int iDec)
     
     nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
     if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -1427,7 +1423,7 @@ int         CPulsar2Controller::setFindRates(int iRa, int iDec)
     
     if (szResp[0] != '1'){
         nErr = ERR_CMDFAILED;
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -1459,7 +1455,7 @@ int         CPulsar2Controller::setSlewRates(int iRa, int iDec)
     
     nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
     if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -1471,7 +1467,7 @@ int         CPulsar2Controller::setSlewRates(int iRa, int iDec)
     
     if (szResp[0] != '1'){
         nErr = ERR_CMDFAILED;
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -1503,7 +1499,7 @@ int         CPulsar2Controller::setGoToRates(int iRa, int iDec)
     
     nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
     if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -1515,7 +1511,7 @@ int         CPulsar2Controller::setGoToRates(int iRa, int iDec)
     
     if (szResp[0] != '1'){
         nErr = ERR_CMDFAILED;
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -1532,6 +1528,8 @@ int         CPulsar2Controller::setGoToRates(int iRa, int iDec)
 int CPulsar2Controller::setRefractionCorrection(bool bEnabled)
 //
 // Function used to enable or disable the refraction correction
+// Command argument 0 = off; 1 = on
+// Response is ambiguous. Probably 1 = OK; 0 = NOK
 //
 // Firmware Validity: >= 4
 //
@@ -1548,7 +1546,7 @@ int CPulsar2Controller::setRefractionCorrection(bool bEnabled)
         nErr = sendCommand("#:YSR0,0#", szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
 
     if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -1557,13 +1555,13 @@ int CPulsar2Controller::setRefractionCorrection(bool bEnabled)
 #endif
         return nErr;
     }
-    if(szResp[0]=='0')
+    if(szResp[0] == '0')
         nErr = ERR_CMDFAILED;
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s] [CPulsar2Controller::setRefractionCorrection] ERR_CMDFAILED: nErr = %d\n", timestamp, nErr);
+    fprintf(Logfile, "[%s] [CPulsar2Controller::setRefractionCorrection] ERR_CMDFAILED: szResp[0] = %c: Err = %d\n", timestamp, szResp[0], nErr);
     fflush(Logfile);
 #endif
     return nErr;
@@ -1584,7 +1582,7 @@ int CPulsar2Controller::commandTubeSwap()
     if(!m_bIsConnected)
         return ERR_NOLINK;
 
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -1594,7 +1592,7 @@ int CPulsar2Controller::commandTubeSwap()
         nErr = sendCommand("#:YW#", szResp, SERIAL_BUFFER_SIZE, 1, false);
     
     if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -1605,7 +1603,7 @@ int CPulsar2Controller::commandTubeSwap()
     }
     if(szResp[0]!='1')
         nErr = ERR_CMDFAILED;
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -1663,7 +1661,7 @@ int CPulsar2Controller::syncRADec(const double &dRa, const double &dDec)
     if(nErr)
         return nErr;
     
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -1679,7 +1677,7 @@ int CPulsar2Controller::syncRADec(const double &dRa, const double &dDec)
     strncpy(raString, szResp, 8);
     strncpy(decString, szResp+9, 9);
     
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -1688,7 +1686,7 @@ int CPulsar2Controller::syncRADec(const double &dRa, const double &dDec)
     fflush(Logfile);
 #endif
     
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
     // print out the deltas
     double deltaRA;  // in arcsec
     double deltaDec;  // in arcsec
@@ -1707,7 +1705,7 @@ int CPulsar2Controller::syncRADec(const double &dRa, const double &dDec)
 #define TOLERANCE_ARCSEC       5.0
     if ((fabs(raStringToDouble(raString) - dRa)*3600.0 < TOLERANCE_ARCSEC) &&
         (fabs(decStringToDouble(decString) - dDec)*3600.0 < TOLERANCE_ARCSEC)) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -1717,7 +1715,7 @@ int CPulsar2Controller::syncRADec(const double &dRa, const double &dDec)
     }
     else {
         nErr = ERR_CMDFAILED;
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -1759,7 +1757,7 @@ int CPulsar2Controller::startSlew(const double& dRa, const double& dDec)
     // first check if there is a slew in progress
     nErr = sendCommand(":YGi#", szResp, SERIAL_BUFFER_SIZE);
     if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -1783,7 +1781,7 @@ int CPulsar2Controller::startSlew(const double& dRa, const double& dDec)
     
     nErr = sendCommand(":MS#", szResp, SERIAL_BUFFER_SIZE);
     if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -1819,7 +1817,7 @@ int CPulsar2Controller::slewStatus(bool &bIsSlewing)
     
     nErr = sendCommand("#:YGi#", szResp, SERIAL_BUFFER_SIZE);
     if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -1879,7 +1877,7 @@ int CPulsar2Controller::stopSlew(void)
     }
 */
     
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
@@ -2000,7 +1998,7 @@ int CPulsar2Controller::startMove(int iDir, int iSpeedIndex)
     // command the selected speed
     nErr = sendCommand(szCommand);
     if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -2021,7 +2019,7 @@ int CPulsar2Controller::startMove(int iDir, int iSpeedIndex)
     
     nErr = sendCommand(szCommand);
     if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -2066,7 +2064,7 @@ int CPulsar2Controller::stopMoving(int iDir)
     
     nErr = sendCommand(szCommand);
     if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -2128,7 +2126,7 @@ int CPulsar2Controller::park(const double& dAz, const double& dAlt)
     bool bIsParkDefined;
     nErr = parkIsParkDefined(bIsParkDefined);
     if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -2142,7 +2140,7 @@ if (!bIsParkDefined)
     
     nErr = sendCommand("#:YH#", szResp, SERIAL_BUFFER_SIZE);    // park
     if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -2153,7 +2151,7 @@ if (!bIsParkDefined)
     }
     if (szResp[0] != '1'){
         nErr = ERR_CMDFAILED;
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -2186,7 +2184,7 @@ int CPulsar2Controller::parkIsParked(bool &isParked)
 
     nErr = sendCommand("#:YGk#", szResp, SERIAL_BUFFER_SIZE);    // IsParked ?
     if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -2220,7 +2218,7 @@ int CPulsar2Controller::parkIsParking(bool &isParking)
     
     nErr = sendCommand("#:YGj#", szResp, SERIAL_BUFFER_SIZE);    // IsParking ?
     if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -2253,7 +2251,7 @@ int CPulsar2Controller::parkIsParkDefined(bool &isParkSet)
     
     nErr = sendCommand("#:YGh#", szResp, SERIAL_BUFFER_SIZE);    // IsHomeSet ?
     if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -2289,7 +2287,7 @@ int CPulsar2Controller::parkSetParkPosition()
     // get current alt/az
     nErr = getAltAz(dAlt, dAz);
     if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -2310,7 +2308,7 @@ int CPulsar2Controller::parkSetParkPosition()
 #endif
     nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
     if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -2348,7 +2346,7 @@ int CPulsar2Controller::unPark()
     
     nErr = sendCommand("#:YL#", szResp, SERIAL_BUFFER_SIZE);    // unpark
     if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
@@ -2359,7 +2357,7 @@ int CPulsar2Controller::unPark()
     }
     if (szResp[0] != '1'){
         nErr = ERR_CMDFAILED;
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_ALL
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;

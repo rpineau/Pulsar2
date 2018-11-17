@@ -43,7 +43,7 @@
 #define VERBOSE_ALL                 4
 #define VERBOSE_CRAZY               5
 
-#define PULSAR2_DEBUG VERBOSE_ALL
+#define PULSAR2_DEBUG VERBOSE_CRAZY
 
 #define STOPPED     0
 #define SIDEREAL    1
