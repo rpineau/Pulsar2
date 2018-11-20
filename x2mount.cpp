@@ -1108,14 +1108,15 @@ int X2Mount::execModalSettingsDialog(void)
     dx->setPropertyDouble("doubleSpinBox_HourFlip", "value", Pulsar2.dFlipHourStored);
     
     //  Set Rates
-    dx->setPropertyDouble("doubleSpinBox_Guide_RA", "value", Pulsar2.dGuideRateRAStored);
-    dx->setPropertyDouble("doubleSpinBox_Guide_Dec", "value", Pulsar2.dGuideRateDecStored);
-    dx->setPropertyInt("spinBox_Centre_RA", "value", Pulsar2.iCentreRateRAStored);
-    dx->setPropertyInt("spinBox_Centre_Dec", "value", Pulsar2.iCentreRateDecStored);
-    dx->setPropertyInt("spinBox_Find_RA", "value", Pulsar2.iFindRateRAStored);
-    dx->setPropertyInt("spinBox_Find_Dec", "value", Pulsar2.iFindRateDecStored);
-    dx->setPropertyInt("spinBox_Slew_RA", "value", Pulsar2.iSlewRateRAStored);
-    dx->setPropertyInt("spinBox_Slew_Dec", "value", Pulsar2.iSlewRateDecStored);
+    dx->setPropertyDouble("doubleSpinBox_GuideRA", "value", Pulsar2.dGuideRateRAStored);
+    dx->setPropertyDouble("doubleSpinBox_GuideDec", "value", Pulsar2.dGuideRateDecStored);
+
+    dx->setPropertyInt("spinBox_CentreRA", "value", Pulsar2.iCentreRateRAStored);
+    dx->setPropertyInt("spinBox_CentreDec", "value", Pulsar2.iCentreRateDecStored);
+    dx->setPropertyInt("spinBox_FindRA", "value", Pulsar2.iFindRateRAStored);
+    dx->setPropertyInt("spinBox_FindDec", "value", Pulsar2.iFindRateDecStored);
+    dx->setPropertyInt("spinBox_SlewRA", "value", Pulsar2.iSlewRateRAStored);
+    dx->setPropertyInt("spinBox_SlewDec", "value", Pulsar2.iSlewRateDecStored);
 
     //   Synchronisation on Connect
     dx->setChecked("checkBox_syncTime", Pulsar2.bSyncTimeOnConnectStored);
@@ -1145,14 +1146,15 @@ int X2Mount::execModalSettingsDialog(void)
         dx->propertyDouble("doubleSpinBox_HoursWest", "value", Pulsar2.dHoursWestStored);
         dx->propertyDouble("doubleSpinBox_HourFlip", "value", Pulsar2.dFlipHourStored);
         
-        dx->propertyDouble("doubleSpinBox_Guide_RA", "value", Pulsar2.dGuideRateRAStored);
-        dx->propertyDouble("doubleSpinBox_Guide_Dec", "value", Pulsar2.dGuideRateDecStored);
-        dx->propertyInt("spinBox_Centre_RA", "value", Pulsar2.iCentreRateRAStored);
-        dx->propertyInt("spinBox_Centre_Dec", "value", Pulsar2.iCentreRateDecStored);
-        dx->propertyInt("spinBox_Find_RA", "value", Pulsar2.iFindRateRAStored);
-        dx->propertyInt("spinBox_Find_Dec", "value", Pulsar2.iFindRateDecStored);
-        dx->propertyInt("spinBox_Slew_RA", "value", Pulsar2.iSlewRateRAStored);
-        dx->propertyInt("spinBox_Slew_Dec", "value", Pulsar2.iSlewRateDecStored);
+        dx->propertyDouble("doubleSpinBox_GuideRA", "value", Pulsar2.dGuideRateRAStored);
+        dx->propertyDouble("doubleSpinBox_GuideDec", "value", Pulsar2.dGuideRateDecStored);
+
+        dx->propertyInt("spinBox_CentreRA", "value", Pulsar2.iCentreRateRAStored);
+        dx->propertyInt("spinBox_CentreDec", "value", Pulsar2.iCentreRateDecStored);
+        dx->propertyInt("spinBox_FindRA", "value", Pulsar2.iFindRateRAStored);
+        dx->propertyInt("spinBox_FindDec", "value", Pulsar2.iFindRateDecStored);
+        dx->propertyInt("spinBox_SlewRA", "value", Pulsar2.iSlewRateRAStored);
+        dx->propertyInt("spinBox_SlewDec", "value", Pulsar2.iSlewRateDecStored);
 
         Pulsar2.bSyncTimeOnConnectStored = dx->isChecked("checkBox_syncTime");
         Pulsar2.bSyncLocationOnConnectStored = dx->isChecked("checkBox_syncLocation");
@@ -1201,14 +1203,15 @@ void X2Mount::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
         iRa = (int)(dRa*10.0);
         iDec = (int)(dDec*10.0);
         nErr = Pulsar2.setGuideRates(iRa, iDec);
-        if(nErr){
-            snprintf(szTmpBuf, SERIAL_BUFFER_SIZE, "Error setting guide rates to %3.1f : %3.1f", dRa, dDec);
-            uiex->messageBox("Error", szTmpBuf);
-            return;
-        }
+        //if(nErr){
+        //    snprintf(szTmpBuf, SERIAL_BUFFER_SIZE, "Error setting guide rates to %3.1f : %3.1f", dRa, dDec);
+        //    uiex->messageBox("Error", szTmpBuf);
+        //    return;
+        //}
         // store the values used
         Pulsar2.dGuideRateRAStored = dRa;
         Pulsar2.dGuideRateDecStored = dDec;
+
     }
     else if (!strcmp(pszEvent, "on_pushButton_2_clicked")) { // Centre (1 - 999 x sidereal)
         uiex->propertyInt("spinBox_CentreRA", "value", iRa);
