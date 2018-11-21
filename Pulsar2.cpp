@@ -36,7 +36,7 @@ CPulsar2Controller::CPulsar2Controller(void)
     m_sLogfilePath = getenv("HOME");
     m_sLogfilePath += "/Pulsar2Log.txt";
 #endif
-    Logfile = fopen(m_sLogfilePath.c_str(), "w");
+    Logfile = fopen(m_sLogfilePath.c_str(), "a");
 #endif
     
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= 2
@@ -66,6 +66,8 @@ int CPulsar2Controller::connect(const char *szPort)
 //
 {
     int nErr = SB_OK;
+    
+    int iRA, iDec;
     
     m_bIsConnected = true;
     nErr = m_pSerx->open(szPort, 38400, SerXInterface::B_NOPARITY);
@@ -185,6 +187,104 @@ int CPulsar2Controller::connect(const char *szPort)
         }
     }
     
+    // get the speed settings
+    // guide
+    getGuideRates(iRA, iDec);
+    if(nErr) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::Connect] Error getting Guide Rates\n", timestamp);
+        fflush(Logfile);
+#endif
+        return nErr;
+    }
+    if(iRA != (int)(dGuideRateRAStored*10.0)  ||  iDec != (int)(dGuideRateDecStored*10.0)) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::Connect] Guide Rate Difference. Stored RA, Dec = %f, %f; Mount RA, Dec = %f, %f\n", timestamp, dGuideRateRAStored, dGuideRateDecStored, (double)(iRA/10.0), (double)(iDec/10.0));
+        fflush(Logfile);
+#endif
+    dGuideRateRAStored = (double)iRA/10.0;
+    dGuideRateDecStored = (double)iDec/10.0;
+    }
+
+    // centre
+    getCentreRates(iRA, iDec);
+    if(nErr) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::Connect] Error getting Centre Rates\n", timestamp);
+        fflush(Logfile);
+#endif
+        return nErr;
+    }
+    if(iRA != iCentreRateRAStored  ||  iDec != iCentreRateDecStored) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::Connect] Centre Rate Difference. Stored RA, Dec = %d, %d; Mount RA, Dec = %d, %d\n", timestamp, iCentreRateRAStored, iCentreRateDecStored, iRA, iDec);
+        fflush(Logfile);
+#endif
+    iCentreRateRAStored = iRA;
+    iCentreRateDecStored = iDec;
+    }
+
+    // find
+    getFindRates(iRA, iDec);
+    if(nErr) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::Connect] Error getting Find Rates\n", timestamp);
+        fflush(Logfile);
+#endif
+        return nErr;
+    }
+    if(iRA != iFindRateRAStored  ||  iDec != iFindRateDecStored) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::Connect] Find Rate Difference. Stored RA, Dec = %d, %d; Mount RA, Dec = %d, %d\n", timestamp, iFindRateRAStored, iFindRateDecStored, iRA, iDec);
+        fflush(Logfile);
+#endif
+    iFindRateRAStored = iRA;
+    iFindRateDecStored = iDec;
+    }
+
+    // slew
+    getSlewRates(iRA, iDec);
+    if(nErr) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::Connect] Error getting Slew Rates\n", timestamp);
+        fflush(Logfile);
+#endif
+        return nErr;
+    }
+    if(iRA != iSlewRateRAStored  ||  iDec != iSlewRateDecStored) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::Connect] Slew Rate Difference. Stored RA, Dec = %d, %d; Mount RA, Dec = %d, %d\n", timestamp, iSlewRateRAStored, iSlewRateDecStored, iRA, iDec);
+        fflush(Logfile);
+#endif
+    iSlewRateRAStored = iRA;
+    iSlewRateDecStored = iDec;
+    }
+
+
     return nErr;
 }
 
@@ -1310,226 +1410,6 @@ int CPulsar2Controller::setTrackingRate(int nRate)
     return nErr;
 }
 
-//////////////////////////////////////////////////////////////////////////////
-int         CPulsar2Controller::setGuideRates(int iRa, int iDec)
-// set Guide Rate in RA and Dec
-//
-//
-// Firmware Validity: >= 4
-//
-
-{
-    int nErr = OK;
-    char szResp[SERIAL_BUFFER_SIZE];
-    char szCommand[SERIAL_BUFFER_SIZE];
-    
-    if(!m_bIsConnected)
-        return ERR_NOLINK;
-    
-    snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:YSA%d,%d#", iRa, iDec);
-    
-    nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
-    if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CPulsar2Controller::setGuideRates] Error setting Guide Rates to %d, %d : %s\n", timestamp, iRa, iDec, szResp);
-        fflush(Logfile);
-#endif
-        return nErr;
-    }
-    
-    if (szResp[0] != '1'){
-        nErr = ERR_CMDFAILED;
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CPulsar2Controller::setGuideRates] Error setting Guide Rates to %d, %d : %s\n", timestamp, iRa, iDec, szResp);
-        fprintf(Logfile, "[%s] [CPulsar2Controller::setGuideRates] ERR_CMDFAILED: nErr = %d\n", timestamp, nErr);
-        fflush(Logfile);
-#endif
-        return nErr;
-    }
-    return nErr;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-int         CPulsar2Controller::setCentreRates(int iRa, int iDec)
-// set Centre Rate in RA and Dec
-//
-//
-// Firmware Validity: >= 4
-//
-{
-        int nErr = OK;
-        char szResp[SERIAL_BUFFER_SIZE];
-        char szCommand[SERIAL_BUFFER_SIZE];
-        
-        if(!m_bIsConnected)
-            return ERR_NOLINK;
-        
-        snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:YSB%d,%d#", iRa, iDec);
-        
-        nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
-        if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
-            ltime = time(NULL);
-            timestamp = asctime(localtime(&ltime));
-            timestamp[strlen(timestamp) - 1] = 0;
-            fprintf(Logfile, "[%s] [CPulsar2Controller::setCentreRates] Error setting Centre Rates to %d, %d : %s\n", timestamp, iRa, iDec, szResp);
-            fflush(Logfile);
-#endif
-            return nErr;
-        }
-        
-        if (szResp[0] != '1'){
-            nErr = ERR_CMDFAILED;
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
-            ltime = time(NULL);
-            timestamp = asctime(localtime(&ltime));
-            timestamp[strlen(timestamp) - 1] = 0;
-            fprintf(Logfile, "[%s] [CPulsar2Controller::setCentreRates] Error setting Centre Rates to %d, %d : %s\n", timestamp, iRa, iDec, szResp);
-            fprintf(Logfile, "[%s] [CPulsar2Controller::setCentreRates] ERR_CMDFAILED: nErr = %d\n", timestamp, nErr);
-            fflush(Logfile);
-#endif
-            return nErr;
-        }
-        return nErr;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-int         CPulsar2Controller::setFindRates(int iRa, int iDec)
-// set Find Rate in RA and Dec
-//
-//
-// Firmware Validity: >= 4
-//
-{
-    int nErr = OK;
-    char szResp[SERIAL_BUFFER_SIZE];
-    char szCommand[SERIAL_BUFFER_SIZE];
-    
-    if(!m_bIsConnected)
-        return ERR_NOLINK;
-    
-    snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:YSC%d,%d#", iRa, iDec);
-    
-    nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
-    if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CPulsar2Controller::setFindRates] Error setting Find Rates to %d, %d : %s\n", timestamp, iRa, iDec, szResp);
-        fflush(Logfile);
-#endif
-        return nErr;
-    }
-    
-    if (szResp[0] != '1'){
-        nErr = ERR_CMDFAILED;
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CPulsar2Controller::setFindRates] Error setting Find Rates to %d, %d : %s\n", timestamp, iRa, iDec, szResp);
-        fprintf(Logfile, "[%s] [CPulsar2Controller::setFindRates] ERR_CMDFAILED: nErr = %d\n", timestamp, nErr);
-        fflush(Logfile);
-#endif
-        return nErr;
-    }
-    return nErr;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-int         CPulsar2Controller::setSlewRates(int iRa, int iDec)
-// set Slew Rate in RA and Dec
-//
-//
-// Firmware Validity: >= 4
-//
-{
-    int nErr = OK;
-    char szResp[SERIAL_BUFFER_SIZE];
-    char szCommand[SERIAL_BUFFER_SIZE];
-    
-    if(!m_bIsConnected)
-        return ERR_NOLINK;
-    
-    snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:YSD%d,%d#", iRa, iDec);
-    
-    nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
-    if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CPulsar2Controller::setSlewRates] Error setting Slew Rates to %d, %d : %s\n", timestamp, iRa, iDec, szResp);
-        fflush(Logfile);
-#endif
-        return nErr;
-    }
-    
-    if (szResp[0] != '1'){
-        nErr = ERR_CMDFAILED;
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CPulsar2Controller::setSlewRates] Error setting Slew Rates to %d, %d : %s\n", timestamp, iRa, iDec, szResp);
-        fprintf(Logfile, "[%s] [CPulsar2Controller::setSlewRates] ERR_CMDFAILED: nErr = %d\n", timestamp, nErr);
-        fflush(Logfile);
-#endif
-        return nErr;
-    }
-    return nErr;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-int         CPulsar2Controller::setGoToRates(int iRa, int iDec)
-// set GoTo Rate in RA and Dec
-//
-//
-// Firmware Validity: >= 4
-//
-{
-    int nErr = OK;
-    char szResp[SERIAL_BUFFER_SIZE];
-    char szCommand[SERIAL_BUFFER_SIZE];
-    
-    if(!m_bIsConnected)
-        return ERR_NOLINK;
-    
-    snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:YSE%d,%d#", iRa, iDec);
-    
-    nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
-    if(nErr) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CPulsar2Controller::setGoToRates] Error setting GoTo Rates to %d, %d : %s\n", timestamp, iRa, iDec, szResp);
-        fflush(Logfile);
-#endif
-        return nErr;
-    }
-    
-    if (szResp[0] != '1'){
-        nErr = ERR_CMDFAILED;
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CPulsar2Controller::setGoToRates] Error setting GoTo Rates to %d, %d : %s\n", timestamp, iRa, iDec, szResp);
-        fprintf(Logfile, "[%s] [CPulsar2Controller::setGoToRates] ERR_CMDFAILED: nErr = %d\n", timestamp, nErr);
-        fflush(Logfile);
-#endif
-        return nErr;
-    }
-    return nErr;
-}
 
 //////////////////////////////////////////////////////////////////////////////
 int CPulsar2Controller::setRefractionCorrection(bool bEnabled)
@@ -1618,6 +1498,546 @@ int CPulsar2Controller::commandTubeSwap()
     fprintf(Logfile, "[%s] [CPulsar2Controller::commandTubeSwap] ERR_CMDFAILED: response = %s\n", timestamp, szResp);
     fflush(Logfile);
 #endif
+    return nErr;
+}
+
+
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+#pragma mark - Movement Rates
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+int         CPulsar2Controller::getGuideRates(int &iRa, int &iDec)
+// set Guide Rate in RA and Dec
+//
+//
+// Firmware Validity:  4.xx response has 4 characters for each field
+// Firmware Validity:  5.xx response has 3 characters for each field
+//
+
+{
+    int nErr = OK;
+    char szResp[SERIAL_BUFFER_SIZE];
+    const char comma[] = ",";
+    int commaLength;
+    char cRaSpeed[SERIAL_BUFFER_SIZE];
+
+    if(!m_bIsConnected)
+        return ERR_NOLINK;
+    
+    nErr = sendCommand("#:YGA#", szResp, SERIAL_BUFFER_SIZE);
+    if(nErr) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::getGuideRates] Error getting Guide Rates : %s\n", timestamp, szResp);
+        fflush(Logfile);
+#endif
+        return nErr;
+    }
+    
+    // response is of type nnnn,nnnn (with # removed). Decode the two fields
+    commaLength = (int)strcspn(szResp, comma); // commaLength is the length of the string before the comma
+    if (commaLength >= strlen(szResp)) {  // ie if no comma found
+        nErr = ERR_CMDFAILED;
+    #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::getGuideRates] Error getting Guide Rates. Response : %s\n", timestamp, szResp);
+        fprintf(Logfile, "[%s] [CPulsar2Controller::getGuideRates] ERR_CMDFAILED: nErr = %d\n", timestamp, nErr);
+        fflush(Logfile);
+    #endif
+        return nErr;
+    }
+
+    strncpy(cRaSpeed, szResp, commaLength);
+    iRa = atoi(cRaSpeed);
+    
+    iDec = atoi(&szResp[commaLength+1]);
+    
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CPulsar2Controller::getGuideRates] Guide Rates results : RA : %d, Dec : %d\n", timestamp, iRa, iDec);
+    fflush(Logfile);
+#endif
+
+    return nErr;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+int         CPulsar2Controller::setGuideRates(int iRa, int iDec)
+// set Guide Rate in RA and Dec
+//
+//
+// Firmware Validity: >= 4
+//
+
+{
+    int nErr = OK;
+    char szResp[SERIAL_BUFFER_SIZE];
+    char szCommand[SERIAL_BUFFER_SIZE];
+    
+    if(!m_bIsConnected)
+        return ERR_NOLINK;
+    
+    snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:YSA%d,%d#", iRa, iDec);
+    
+    nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
+    if(nErr) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::setGuideRates] Error setting Guide Rates to %d, %d : %s\n", timestamp, iRa, iDec, szResp);
+        fflush(Logfile);
+#endif
+        return nErr;
+    }
+    
+    if (szResp[0] != '1'){
+        nErr = ERR_CMDFAILED;
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::setGuideRates] Error setting Guide Rates to %d, %d : %s\n", timestamp, iRa, iDec, szResp);
+        fprintf(Logfile, "[%s] [CPulsar2Controller::setGuideRates] ERR_CMDFAILED: nErr = %d\n", timestamp, nErr);
+        fflush(Logfile);
+#endif
+        return nErr;
+    }
+    return nErr;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+int         CPulsar2Controller::getCentreRates(int &iRa, int &iDec)
+// set Guide Rate in RA and Dec
+//
+//
+// Firmware Validity:  4.xx response has 4 characters for each field
+// Firmware Validity:  5.xx response has 3 characters for each field
+//
+
+{
+    int nErr = OK;
+    char szResp[SERIAL_BUFFER_SIZE];
+    const char comma[] = ",";
+    int commaLength;
+    char cRaSpeed[SERIAL_BUFFER_SIZE];
+    
+    if(!m_bIsConnected)
+        return ERR_NOLINK;
+    
+    nErr = sendCommand("#:YGB#", szResp, SERIAL_BUFFER_SIZE);
+    if(nErr) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::getCentreRates] Error getting Centre Rates : %s\n", timestamp, szResp);
+        fflush(Logfile);
+#endif
+        return nErr;
+    }
+    
+    // response is of type nnnn,nnnn (with # removed). Decode the two fields
+    commaLength = (int)strcspn(szResp, comma); // commaLength is the length of the string before the comma
+    if (commaLength >= strlen(szResp)) {  // ie if no comma found
+        nErr = ERR_CMDFAILED;
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::getCentreRates] Error getting Centre Rates. Response : %s\n", timestamp, szResp);
+        fprintf(Logfile, "[%s] [CPulsar2Controller::getCentreRates] ERR_CMDFAILED: nErr = %d\n", timestamp, nErr);
+        fflush(Logfile);
+#endif
+        return nErr;
+    }
+    
+    strncpy(cRaSpeed, szResp, commaLength);
+    iRa = atoi(cRaSpeed);
+    
+    iDec = atoi(&szResp[commaLength+1]);
+    
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CPulsar2Controller::getCentreRates] Centre Rates results : RA : %d, Dec : %d\n", timestamp, iRa, iDec);
+    fflush(Logfile);
+#endif
+    
+    return nErr;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+int         CPulsar2Controller::setCentreRates(int iRa, int iDec)
+// set Centre Rate in RA and Dec
+//
+//
+// Firmware Validity: >= 4
+//
+{
+    int nErr = OK;
+    char szResp[SERIAL_BUFFER_SIZE];
+    char szCommand[SERIAL_BUFFER_SIZE];
+    
+    if(!m_bIsConnected)
+        return ERR_NOLINK;
+    
+    snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:YSB%d,%d#", iRa, iDec);
+    
+    nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
+    if(nErr) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::setCentreRates] Error setting Centre Rates to %d, %d : %s\n", timestamp, iRa, iDec, szResp);
+        fflush(Logfile);
+#endif
+        return nErr;
+    }
+    
+    if (szResp[0] != '1'){
+        nErr = ERR_CMDFAILED;
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::setCentreRates] Error setting Centre Rates to %d, %d : %s\n", timestamp, iRa, iDec, szResp);
+        fprintf(Logfile, "[%s] [CPulsar2Controller::setCentreRates] ERR_CMDFAILED: nErr = %d\n", timestamp, nErr);
+        fflush(Logfile);
+#endif
+        return nErr;
+    }
+    return nErr;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+int         CPulsar2Controller::getFindRates(int &iRa, int &iDec)
+// set Guide Rate in RA and Dec
+//
+//
+// Firmware Validity:  4.xx response has 4 characters for each field
+// Firmware Validity:  5.xx response has 3 characters for each field
+//
+
+{
+    int nErr = OK;
+    char szResp[SERIAL_BUFFER_SIZE];
+    const char comma[] = ",";
+    int commaLength;
+    char cRaSpeed[SERIAL_BUFFER_SIZE];
+    
+    if(!m_bIsConnected)
+        return ERR_NOLINK;
+    
+    nErr = sendCommand("#:YGC#", szResp, SERIAL_BUFFER_SIZE);
+    if(nErr) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::getFindRates] Error getting Find Rates : %s\n", timestamp, szResp);
+        fflush(Logfile);
+#endif
+        return nErr;
+    }
+    
+    // response is of type nnnn,nnnn (with # removed). Decode the two fields
+    commaLength = (int)strcspn(szResp, comma); // commaLength is the length of the string before the comma
+    if (commaLength >= strlen(szResp)) {  // ie if no comma found
+        nErr = ERR_CMDFAILED;
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::getFindRates] Error getting Find Rates. Response : %s\n", timestamp, szResp);
+        fprintf(Logfile, "[%s] [CPulsar2Controller::getFindRates] ERR_CMDFAILED: nErr = %d\n", timestamp, nErr);
+        fflush(Logfile);
+#endif
+        return nErr;
+    }
+    
+    strncpy(cRaSpeed, szResp, commaLength);
+    iRa = atoi(cRaSpeed);
+    
+    iDec = atoi(&szResp[commaLength+1]);
+    
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CPulsar2Controller::getFindRates] Find Rates results : RA : %d, Dec : %d\n", timestamp, iRa, iDec);
+    fflush(Logfile);
+#endif
+    
+    return nErr;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+int         CPulsar2Controller::setFindRates(int iRa, int iDec)
+// set Find Rate in RA and Dec
+//
+//
+// Firmware Validity: >= 4
+//
+{
+    int nErr = OK;
+    char szResp[SERIAL_BUFFER_SIZE];
+    char szCommand[SERIAL_BUFFER_SIZE];
+    
+    if(!m_bIsConnected)
+        return ERR_NOLINK;
+    
+    snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:YSC%d,%d#", iRa, iDec);
+    
+    nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
+    if(nErr) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::setFindRates] Error setting Find Rates to %d, %d : %s\n", timestamp, iRa, iDec, szResp);
+        fflush(Logfile);
+#endif
+        return nErr;
+    }
+    
+    if (szResp[0] != '1'){
+        nErr = ERR_CMDFAILED;
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::setFindRates] Error setting Find Rates to %d, %d : %s\n", timestamp, iRa, iDec, szResp);
+        fprintf(Logfile, "[%s] [CPulsar2Controller::setFindRates] ERR_CMDFAILED: nErr = %d\n", timestamp, nErr);
+        fflush(Logfile);
+#endif
+        return nErr;
+    }
+    return nErr;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+int         CPulsar2Controller::getSlewRates(int &iRa, int &iDec)
+// set Guide Rate in RA and Dec
+//
+//
+// Firmware Validity:  4.xx response has 4 characters for each field
+// Firmware Validity:  5.xx response has 3 characters for each field
+//
+
+{
+    int nErr = OK;
+    char szResp[SERIAL_BUFFER_SIZE];
+    const char comma[] = ",";
+    int commaLength;
+    char cRaSpeed[SERIAL_BUFFER_SIZE];
+    
+    if(!m_bIsConnected)
+        return ERR_NOLINK;
+    
+    nErr = sendCommand("#:YGD#", szResp, SERIAL_BUFFER_SIZE);
+    if(nErr) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::getSlewRates] Error getting Slew Rates : %s\n", timestamp, szResp);
+        fflush(Logfile);
+#endif
+        return nErr;
+    }
+    
+    // response is of type nnnn,nnnn (with # removed). Decode the two fields
+    commaLength = (int)strcspn(szResp, comma); // commaLength is the length of the string before the comma
+    if (commaLength >= strlen(szResp)) {  // ie if no comma found
+        nErr = ERR_CMDFAILED;
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::getSlewRates] Error getting Slew Rates. Response : %s\n", timestamp, szResp);
+        fprintf(Logfile, "[%s] [CPulsar2Controller::getSlewRates] ERR_CMDFAILED: nErr = %d\n", timestamp, nErr);
+        fflush(Logfile);
+#endif
+        return nErr;
+    }
+    
+    strncpy(cRaSpeed, szResp, commaLength);
+    iRa = atoi(cRaSpeed);
+    
+    iDec = atoi(&szResp[commaLength+1]);
+    
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CPulsar2Controller::getSlewRates] Slew Rates results : RA : %d, Dec : %d\n", timestamp, iRa, iDec);
+    fflush(Logfile);
+#endif
+    
+    return nErr;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+int         CPulsar2Controller::setSlewRates(int iRa, int iDec)
+// set Slew Rate in RA and Dec
+//
+//
+// Firmware Validity: >= 4
+//
+{
+    int nErr = OK;
+    char szResp[SERIAL_BUFFER_SIZE];
+    char szCommand[SERIAL_BUFFER_SIZE];
+    
+    if(!m_bIsConnected)
+        return ERR_NOLINK;
+    
+    snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:YSD%d,%d#", iRa, iDec);
+    
+    nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
+    if(nErr) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::setSlewRates] Error setting Slew Rates to %d, %d : %s\n", timestamp, iRa, iDec, szResp);
+        fflush(Logfile);
+#endif
+        return nErr;
+    }
+    
+    if (szResp[0] != '1'){
+        nErr = ERR_CMDFAILED;
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::setSlewRates] Error setting Slew Rates to %d, %d : %s\n", timestamp, iRa, iDec, szResp);
+        fprintf(Logfile, "[%s] [CPulsar2Controller::setSlewRates] ERR_CMDFAILED: nErr = %d\n", timestamp, nErr);
+        fflush(Logfile);
+#endif
+        return nErr;
+    }
+    return nErr;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+int         CPulsar2Controller::getGoToRates(int &iRa, int &iDec)
+// set Guide Rate in RA and Dec
+//
+//
+// Firmware Validity:  4.xx response has 4 characters for each field
+// Firmware Validity:  5.xx response has 3 characters for each field
+//
+
+{
+    int nErr = OK;
+    char szResp[SERIAL_BUFFER_SIZE];
+    const char comma[] = ",";
+    int commaLength;
+    char cRaSpeed[SERIAL_BUFFER_SIZE];
+    
+    if(!m_bIsConnected)
+        return ERR_NOLINK;
+    
+    nErr = sendCommand("#:YGE#", szResp, SERIAL_BUFFER_SIZE);
+    if(nErr) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::getGoToRates] Error getting GoTo Rates : %s\n", timestamp, szResp);
+        fflush(Logfile);
+#endif
+        return nErr;
+    }
+    
+    // response is of type nnnn,nnnn (with # removed). Decode the two fields
+    commaLength = (int)strcspn(szResp, comma); // commaLength is the length of the string before the comma
+    if (commaLength >= strlen(szResp)) {  // ie if no comma found
+        nErr = ERR_CMDFAILED;
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::getGoToRates] Error getting GoTo Rates. Response : %s\n", timestamp, szResp);
+        fprintf(Logfile, "[%s] [CPulsar2Controller::getGoToRates] ERR_CMDFAILED: nErr = %d\n", timestamp, nErr);
+        fflush(Logfile);
+#endif
+        return nErr;
+    }
+    
+    strncpy(cRaSpeed, szResp, commaLength);
+    iRa = atoi(cRaSpeed);
+    
+    iDec = atoi(&szResp[commaLength+1]);
+    
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CPulsar2Controller::getSlewRates] GoTo Rates results : RA : %d, Dec : %d\n", timestamp, iRa, iDec);
+    fflush(Logfile);
+#endif
+    
+    return nErr;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+int         CPulsar2Controller::setGoToRates(int iRa, int iDec)
+// set GoTo Rate in RA and Dec
+//
+//
+// Firmware Validity: >= 4
+//
+{
+    int nErr = OK;
+    char szResp[SERIAL_BUFFER_SIZE];
+    char szCommand[SERIAL_BUFFER_SIZE];
+    
+    if(!m_bIsConnected)
+        return ERR_NOLINK;
+    
+    snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:YSE%d,%d#", iRa, iDec);
+    
+    nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
+    if(nErr) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::setGoToRates] Error setting GoTo Rates to %d, %d : %s\n", timestamp, iRa, iDec, szResp);
+        fflush(Logfile);
+#endif
+        return nErr;
+    }
+    
+    if (szResp[0] != '1'){
+        nErr = ERR_CMDFAILED;
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::setGoToRates] Error setting GoTo Rates to %d, %d : %s\n", timestamp, iRa, iDec, szResp);
+        fprintf(Logfile, "[%s] [CPulsar2Controller::setGoToRates] ERR_CMDFAILED: nErr = %d\n", timestamp, nErr);
+        fflush(Logfile);
+#endif
+        return nErr;
+    }
     return nErr;
 }
 

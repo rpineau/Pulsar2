@@ -45,8 +45,8 @@ X2Mount::X2Mount(const char* pszDriverSelection,
         Pulsar2.iCentreRateDecStored = m_pIniUtil->readInt(PARENT_KEY_STRING, PULSAR2_CENTRE_DEC, 20);
         Pulsar2.iFindRateRAStored = m_pIniUtil->readInt(PARENT_KEY_STRING, PULSAR2_FIND_RA, 100);
         Pulsar2.iFindRateDecStored = m_pIniUtil->readInt(PARENT_KEY_STRING, PULSAR2_FIND_DEC, 100);
-        Pulsar2.iSlewRateRAStored = m_pIniUtil->readInt(PARENT_KEY_STRING, PULSAR2_SLEW_RA, 750);
-        Pulsar2.iSlewRateDecStored = m_pIniUtil->readInt(PARENT_KEY_STRING, PULSAR2_SLEW_DEC, 750);
+        Pulsar2.iSlewRateRAStored = m_pIniUtil->readInt(PARENT_KEY_STRING, PULSAR2_SLEW_RA, 800);
+        Pulsar2.iSlewRateDecStored = m_pIniUtil->readInt(PARENT_KEY_STRING, PULSAR2_SLEW_DEC, 800);
         Pulsar2.bSyncTimeOnConnectStored = m_pIniUtil->readInt(PARENT_KEY_STRING, PULSAR2_SYNC_TIME, 0);
         Pulsar2.bSyncLocationOnConnectStored = m_pIniUtil->readInt(PARENT_KEY_STRING, PULSAR2_SYNC_LOCATION, 0);
         

@@ -43,7 +43,7 @@
 #define VERBOSE_ALL                 4
 #define VERBOSE_CRAZY               5
 
-#define PULSAR2_DEBUG VERBOSE_CRAZY
+#define PULSAR2_DEBUG VERBOSE_ALL
 
 #define STOPPED     0
 #define SIDEREAL    1
@@ -64,7 +64,7 @@
 #define NACK 0x15
 
 #define NB_SLEW_SPEEDS      4
-#define SLEW_NAME_LENGHT    32
+#define SLEW_NAME_LENGTH    32
 
 enum PULSAR2_Errors    {OK = 0, NOT_CONNECTED, ND_CANT_CONNECT, BAD_CMD_RESPONSE, COMMAND_FAILED};
 enum PULSAR_ParkStatus  {PARKED = 0, UNPARKED};
@@ -87,7 +87,7 @@ class CPulsar2Controller
         
         int         stopSlew(void);                                         // not tested (not called by TSX)
         int         getRADec(double &dRA, double &dDec);                    // Works
-        int         getAltAz(double &dAlt, double &dAz);                    // not tested
+        int         getAltAz(double &dAlt, double &dAz);                    // Works
         int         toggleFormat();                                         // Works
 
         int         setRefractionCorrection(bool bEnabled);                 // Works
@@ -97,7 +97,7 @@ class CPulsar2Controller
         int         getSideOfPier(int &nPierSide);                          // Works
         int         getFirmware(char *szFirmware, int nMaxStrSize);         // Works
 
-        int         commandTubeSwap(void);                                  // not tested
+        int         commandTubeSwap(void);                                  // Works
 
         int         startSlew(const double& dRa, const double& dDec);       // Works
         int         slewStatus(bool &bIsSlewing);                           // Works
@@ -112,23 +112,27 @@ class CPulsar2Controller
         int         park(const double& dAz, const double& dAlt);            // Works
         int         unPark();                                               // Works
         int         parkIsParked(bool &isParked);                           // Works
-        int         parkIsParking(bool &isParking);                         // not tested
-        int         parkIsParkDefined(bool &isParkSet);                     // not tested
-        int         parkSetParkPosition();                                  // not tested
+        int         parkIsParking(bool &isParking);                         // Works (in limited test cases)
+        int         parkIsParkDefined(bool &isParkSet);                     // Works (if answer yes -- don't know  how to undefine park to test opposite case)
+        int         parkSetParkPosition();                                  // Works
 
-        int         setDateAndTime();                                       // not tested
+        int         setDateAndTime();                                       // Works
         int         setLocation();                                          // Works
 
         int         setRAdec(const double &dRA, const double &dDec);        // Works
         
-        int         setGuideRates(int iRa, int iDec);                       // not tested
-        int         setCentreRates(int iRa, int iDec);                      // not tested
-        int         setFindRates(int iRa, int iDec);                        // not tested
-        int         setSlewRates(int iRa, int iDec);                        // not tested
+        int         getGuideRates(int &iRa, int &iDec);                     // Works
+        int         getCentreRates(int &iRa, int &iDec);                    // Works
+        int         getFindRates(int &iRa, int &iDec);                      // Works
+        int         getSlewRates(int &iRa, int &iDec);                      // Works
+        int         getGoToRates(int &iRa, int &iDec);                      // not tested and not used
+
+        int         setGuideRates(int iRa, int iDec);                       // Works
+        int         setCentreRates(int iRa, int iDec);                      // Works
+        int         setFindRates(int iRa, int iDec);                        // Works
+        int         setSlewRates(int iRa, int iDec);                        // Works
         int         setGoToRates(int iRa, int iDec);                        // not tested and not used
         
-        int         setParkPosition(double &dAlt, double &dAz);             // not tested)
-
         ////////////////////////////////////////////////////////////////
 
         int         getNbSlewRates();                                       // Works
@@ -193,7 +197,7 @@ class CPulsar2Controller
         
         bool swapTubeCommandIssued;
         
-         const char m_aszSlewRateNames[NB_SLEW_SPEEDS][SLEW_NAME_LENGHT] = {"Guide", "Centre", "Find", "Slew"};
+         const char m_aszSlewRateNames[NB_SLEW_SPEEDS][SLEW_NAME_LENGTH] = {"Guide", "Centre", "Find", "Slew"};
 
 #ifdef PULSAR2_DEBUG
         std::string m_sLogfilePath;
