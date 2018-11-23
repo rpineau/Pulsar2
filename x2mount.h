@@ -52,8 +52,6 @@
 
 enum DEBUG_LEVEL {NONE = 0, METHOD, VERBOSE};
 
-// #define PULSAR2_DEBUG VERBOSE  // also defined in Pulsar2.h
-
 #if defined(SB_WIN_BUILD)
 #define DEF_PORT_NAME                    "COM1"
 #elif defined(SB_LINUX_BUILD)
@@ -210,25 +208,6 @@ public:
     virtual void                    setParity(const SerXInterface::Parity& parity){m_nParity = parity;};
     virtual bool                    isParityFixed() const        {return true;}
 
-
-// Stored parameters
-/*
-    double                                  dHoursEastStored;
-    double                                  dHoursWestStored;
-    double                                  dFlipHourStored;
-    int                                     iMeridianBehaviourStored;
-    double                                  dGuideRateRAStored;
-    double                                  dGuideRateDecStored;
-    int                                     iCentreRateRAStored;
-    int                                     iCentreRateDecStored;
-    int                                     iFindRateRAStored;
-    int                                     iFindRateDecStored;
-    int                                     iSlewRateRAStored;
-    int                                     iSlewRateDecStored;
-    bool                                    bSyncTimeOnConnectStored;
-    bool                                    bSyncLocationOnConnectStored;
-*/
-
 private:
 
 	SerXInterface 							*GetSerX() {return m_pSerX; }		
@@ -251,22 +230,9 @@ private:
 
 	void findDevices(X2GUIExchangeInterface *dx);
     
-//    int                                     iLastPosition;
     char                                    serialName[256];
     
     int                                     iLoggingVerbosity;
-    
-/*
-    // the following are used to cache the requested values for solar and lunar rates, since TSX has instantaneous values
-    // for these, unlike the average values in the Pulsar2 firmware. They are used to return the values set by TSX
-    // when commandig Solar or Lunar rate. However, the Pulsar2 itself continues to use its pre-programmed average
-    // rates. This is valid for v4.xx of the firmware
-    // For V5.xx, it is possible to command rates directly and this is used if V5.xx is installed.
-    double dCommandedRAsolarRate = 0.0410681;   // initialised to nominal rates to handle case where tracking rates are
-    double dCommandedDecsolarRate = 0.0;        // queried before being set (they are queried every 1 sec)
-    double dCommandedRAlunarRate = 0.5490149;
-    double dCommandedDeclunarRate = 0.0;
-*/
     
     MountDriverInterface::MoveDir           currentMoveDir;
 
@@ -276,10 +242,7 @@ private:
     SerXInterface::Parity m_nParity;
 
 	bool m_bLinked;
-    int iRateIndex;     // changed from line below by Rodolphe in iEQ30
-//    int iRateIndex = 0;
-//	int m_nPosition;
-
+    int iRateIndex;
 
 };
 

@@ -4,7 +4,7 @@
 //
 //  Created by Richard Wright on 3/25/13.
 //  modified by Richard Francis, 10 Oct 2013
-//  further modified by Richard Francis, 28 Oct 2018
+//  further modified by Richard Francis, 28 Oct 2018 -- 23 Nov 2018
 //
 //
 
@@ -43,7 +43,7 @@
 #define VERBOSE_ALL                 4
 #define VERBOSE_CRAZY               5
 
-#define PULSAR2_DEBUG VERBOSE_ALL
+#define PULSAR2_DEBUG VERBOSE_ESSENTIAL
 
 #define STOPPED     0
 #define SIDEREAL    1
@@ -55,8 +55,7 @@
 
 #define LOG_BUFFER_SIZE 256
 #define SERIAL_BUFFER_SIZE 64
-#define MAX_TIMEOUT 1500        // 1000 ms
-// #define TIMEOUT_READ 1500
+#define MAX_TIMEOUT 2000        // in ms
 
 #define N_OUT_MAXSIZE 40  // buffer for the UTC timecode in ISO8601 format
 
@@ -112,7 +111,7 @@ class CPulsar2Controller
         int         park(const double& dAz, const double& dAlt);            // Works
         int         unPark();                                               // Works
         int         parkIsParked(bool &isParked);                           // Works
-        int         parkIsParking(bool &isParking);                         // Works (in limited test cases)
+        int         parkIsParking(bool &isParking);                         // Works
         int         parkIsParkDefined(bool &isParkSet);                     // Works (if answer yes -- don't know  how to undefine park to test opposite case)
         int         parkSetParkPosition();                                  // Works
 
@@ -135,12 +134,12 @@ class CPulsar2Controller
         
         ////////////////////////////////////////////////////////////////
 
-        int         getNbSlewRates();                                       // Works
-        int         getRateName(int nZeroBasedIndex, char *pszOut, unsigned int nOutMaxSize);  // Works
+        int         getNbSlewRates();
+        int         getRateName(int nZeroBasedIndex, char *pszOut, unsigned int nOutMaxSize);
 
         void        setSerxPointer(SerXInterface *p) { m_pSerx = p; }
         void        setLoggerPointer(LoggerInterface *p) { pLogger = p; }
-        void        setSleeper(SleeperInterface *p) { pSleeper = p; }         // added by Rodolphe in iEQ30
+        void        setSleeper(SleeperInterface *p) { pSleeper = p; }
         void        setTSX(TheSkyXFacadeForDriversInterface *pTSX) { m_pTsx = pTSX;};
 
         bool        m_bIsSlewing = false;
@@ -188,11 +187,11 @@ class CPulsar2Controller
 
         LoggerInterface     *pLogger;
         SerXInterface       *m_pSerx;
-        SleeperInterface    *pSleeper;        // added by Rodolphe in iEQ30
+        SleeperInterface    *pSleeper;
         TheSkyXFacadeForDriversInterface    *m_pTsx;
 
         char        szFirmware[9];
-        int         iMajorFirmwareVersion; // added by CRF 4 Nov 2018, to be used to distinguish commands in v. 5.xx
+        int         iMajorFirmwareVersion; // to be used to distinguish commands in v. 5.xx
         char        m_szLogMessage[LOG_BUFFER_SIZE];
         
         bool swapTubeCommandIssued;
