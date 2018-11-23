@@ -4,7 +4,7 @@
 #define MyAppName "Pulsar2 X2 Plugin"
 #define MyAppVersion "1.0"
 #define MyAppPublisher "Richard Francis"
-#define MyAppURL "http://www.clearanddark.com/""
+#define MyAppURL "https://www.gerspatial.com/"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
