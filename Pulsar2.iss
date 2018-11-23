@@ -27,7 +27,7 @@ OutputDir=installer
 ; Next is the name of the installer
 OutputBaseFilename=Pulsar2_X2_Installer
 ; Final one is the icon you would like on the installer. Comment out if not needed.
-;SetupIconFile=rti_zone_logo.ico
+SetupIconFile=rti_zone_logo.ico
 Compression=lzma
 SolidCompression=yes
 ; We don't want users to be able to select the drectory since read by TSXInstallDir below
