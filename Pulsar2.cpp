@@ -509,9 +509,9 @@ int CPulsar2Controller::getRADec(double &dRA, double &dDec)
 //
 
 {
-    int nErr = OK;
     char szResp[SERIAL_BUFFER_SIZE];
-    
+    int nErr = OK;
+
     if(!m_bIsConnected)
         return ERR_NOLINK;
     
@@ -580,13 +580,32 @@ int CPulsar2Controller::getRADec(double &dRA, double &dDec)
     fflush(Logfile);
 #endif
     
-    //--------------------------------------------------------------------------------------------------------
-    // now, before finishing, check the hour angle and check against the meridian behaviour what to do with it
+    // before we finish, check for meridian handling
+    nErr = handleMeridian(dRA, dDec);
+    
+    return nErr;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+int CPulsar2Controller::handleMeridian(double dRA, double dDec) {
+    //
+    //  check the hour angle and check against the meridian behaviour what to do with it
+    //
+    //  so far I've worked out the logic for the Northern hemisphere.
+    // I may need another function for the southern hemisphere ...
+    //
+    int nErr = OK;
+    
     double currentHourAngle;
     int currentRate;
     int nPierSide;      // nPierSide is 0 for East and 1 for West, or -1 if the response was not understood
     bool bIsParking;
     bool bIsSlewing;
+    
+    //--------
+    // first we dispose of some conditions where we don't need to do anything:
+    // Stopped, Slewing and Parking.
+    // We don't check for Parked becasue we assume the mount is always parked in a "legal" position
     
     nErr = getTracking(currentRate);  // first we need to find out if we're stopped already
     if (nErr != OK) {
@@ -594,27 +613,13 @@ int CPulsar2Controller::getRADec(double &dRA, double &dDec)
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CPulsar2Controller::GetRADec] Error getting tracking rate: %i\n", timestamp, nErr);
+        fprintf(Logfile, "[%s] [CPulsar2Controller::handleMeridian] Error getting tracking rate: %i\n", timestamp, nErr);
         fflush(Logfile);
 #endif
         return nErr;
     }
-
-    if (currentRate == STOPPED)
-        return nErr;
     
-    nErr = getSideOfPier(nPierSide);      // we also need to check if the tube is already swapped (ie on the east side)
-    if (nErr != OK) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CPulsar2Controller::GetRADec] Error getting pier side: %i\n", timestamp, nErr);
-        fflush(Logfile);
-#endif
-        return nErr;
-    }
-    if (nPierSide == 0)  // nPierSide = 1 means that tube is on East side. We don't check against any limit on that side
+    if (currentRate == STOPPED)
         return nErr;
     
     nErr = parkIsParking(bIsParking);   // check if the mount is currently parking, and bail out if it is
@@ -623,13 +628,13 @@ int CPulsar2Controller::getRADec(double &dRA, double &dDec)
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CPulsar2Controller::GetRADec] Error getting pier side: %i\n", timestamp, nErr);
+        fprintf(Logfile, "[%s] [CPulsar2Controller::handleMeridian] Error getting pier side: %i\n", timestamp, nErr);
         fflush(Logfile);
 #endif
         return nErr;
     }
-if (bIsParking)
-    return nErr;
+    if (bIsParking)
+        return nErr;
     
     nErr = slewStatus(bIsSlewing);      // finally check if the mount is currently slewing: bail out if it is
     if (nErr != OK) {
@@ -637,91 +642,195 @@ if (bIsParking)
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CPulsar2Controller::GetRADec] Error getting pier side: %i\n", timestamp, nErr);
+        fprintf(Logfile, "[%s] [CPulsar2Controller::handleMeridian] Error getting pier side: %i\n", timestamp, nErr);
         fflush(Logfile);
 #endif
         return nErr;
     }
     if (bIsSlewing)
         return nErr;
-
-    currentHourAngle = m_pTsx->hourAngle(dRA);  // sign convention is negative to the east
+    
+    //--------
+    // Check the side of the pier the OTA is, and bail out if it's East, as in all cases we do nothing in that case
+    nErr = getSideOfPier(nPierSide);
+    if (nErr != OK) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CPulsar2Controller::handleMeridian] Error getting pier side: %i\n", timestamp, nErr);
+        fflush(Logfile);
+#endif
+        return nErr;
+    }
+    if (nPierSide == 0)  // nPierSide = 1 means that tube is on East side. We don't check against any limit on that side. True for both domains of HA
+        return nErr;
+    
+    //--------
+    // Now let's check the hour angle, as that determines what to do, dependent on the reported pierside
+    currentHourAngle = m_pTsx->hourAngle(dRA);  // TSX function to give HA for a given RA. Sign convention is negative to the east
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s] [CPulsar2Controller::GetRADec] Hour Angle: %7.4f, Tracking Rate: %d, Pier Side: %d\n", timestamp, currentHourAngle, currentRate, nPierSide);
+    fprintf(Logfile, "[%s] [CPulsar2Controller::handleMeridian] Hour Angle: %7.4f, Tracking Rate: %d, Pier Side: %d\n", timestamp, currentHourAngle, currentRate, nPierSide);
     fflush(Logfile);
 #endif
-    switch (iMeridianBehaviourStored)
-    {
-        case 0:  // stop at meridian
-            if (currentHourAngle >= 0.0) {
-                nErr = setTrackingRate(STOPPED);
-                if (nErr != OK) {
-#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
-                    ltime = time(NULL);
-                    timestamp = asctime(localtime(&ltime));
-                    timestamp[strlen(timestamp) - 1] = 0;
-                    fprintf(Logfile, "[%s] [CPulsar2Controller::GetRADec] Error stopping tracking: %i\n", timestamp, nErr);
-                    fflush(Logfile);
-#endif
-                    return nErr;
-                }
-            }
-            break;
-        case 1:  // flip at meridian, if not already flipped
-            if (currentHourAngle >= 0.0  && nPierSide == 1) {  // nPierSide should always be 1 as we bailed if == 0
-                if (!swapTubeCommandIssued) {
-                    nErr = commandTubeSwap();
+    
+    //--------
+    // The meridian behaviour, and some flag results, are different between northern and southern sky
+    // this is determined by the hour angle range. Southern sky has HA -6 < 0 < +6, otherwise Northern
+    
+    if (-6.0 <= currentHourAngle && currentHourAngle < 6.0) {
+    //--------
+    // Southern Sky
+        
+        switch (iMeridianBehaviourStored)
+        {
+            case 0:  // stop at meridian
+                if (currentHourAngle >= 0.0) {
+                    nErr = setTrackingRate(STOPPED);
                     if (nErr != OK) {
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
                         ltime = time(NULL);
                         timestamp = asctime(localtime(&ltime));
                         timestamp[strlen(timestamp) - 1] = 0;
-                        fprintf(Logfile, "[%s] [CPulsar2Controller::GetRADec] Error swapping tube: %i\n", timestamp, nErr);
+                        fprintf(Logfile, "[%s] [CPulsar2Controller::handleMeridian] Error stopping tracking: %i\n", timestamp, nErr);
                         fflush(Logfile);
 #endif
                         return nErr;
                     }
-                    swapTubeCommandIssued = true;
                 }
-            }
-            break;
-        case 2:  // stop at west limit
-            if (currentHourAngle >= dHoursWestStored) {
-                nErr = setTrackingRate(STOPPED);
-                if (nErr != OK) {
+                break;
+            case 1:  // flip at meridian, if not already flipped
+                if (currentHourAngle >= 0.0) {  // nPierSide should always be 1 as we bailed if == 0
+                    if (!swapTubeCommandIssued) {
+                        nErr = startSlew(dRA, dDec);
+                        if (nErr != OK) {
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
-                    ltime = time(NULL);
-                    timestamp = asctime(localtime(&ltime));
-                    timestamp[strlen(timestamp) - 1] = 0;
-                    fprintf(Logfile, "[%s] [CPulsar2Controller::GetRADec] Error stopping tracking: %i\n", timestamp, nErr);
-                    fflush(Logfile);
+                            ltime = time(NULL);
+                            timestamp = asctime(localtime(&ltime));
+                            timestamp[strlen(timestamp) - 1] = 0;
+                            fprintf(Logfile, "[%s] [CPulsar2Controller::handleMeridian] Error swapping tube: %i\n", timestamp, nErr);
+                            fflush(Logfile);
 #endif
-                    return nErr;
+                            return nErr;
+                        }
+                        swapTubeCommandIssued = true;
+                    }
                 }
-            }
-            break;
-        case 3:  // flip at (west) flip limit
-            if (currentHourAngle  >= dFlipHourStored  && nPierSide == 1) {  // nPierSide should always be 1 as we bailed if == 0
-                if (!swapTubeCommandIssued) {
-                    nErr = commandTubeSwap();
+                break;
+            case 2:  // stop at west limit
+                if (currentHourAngle >= dHoursWestStored) {
+                    nErr = setTrackingRate(STOPPED);
                     if (nErr != OK) {
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
                         ltime = time(NULL);
                         timestamp = asctime(localtime(&ltime));
                         timestamp[strlen(timestamp) - 1] = 0;
-                        fprintf(Logfile, "[%s] [CPulsar2Controller::GetRADec] Error swapping tube: %i\n", timestamp, nErr);
+                        fprintf(Logfile, "[%s] [CPulsar2Controller::handleMeridian] Error stopping tracking: %i\n", timestamp, nErr);
                         fflush(Logfile);
 #endif
                         return nErr;
                     }
-                    swapTubeCommandIssued = true;
                 }
-            }
-            break;
+                break;
+            case 3:  // flip at (west) flip limit
+                if (currentHourAngle  >= dFlipHourStored) {  // nPierSide should always be 1 as we bailed if == 0
+                    if (!swapTubeCommandIssued) {
+                        nErr = startSlew(dRA, dDec);
+                        if (nErr != OK) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
+                            ltime = time(NULL);
+                            timestamp = asctime(localtime(&ltime));
+                            timestamp[strlen(timestamp) - 1] = 0;
+                            fprintf(Logfile, "[%s] [CPulsar2Controller::handleMeridian] Error swapping tube: %i\n", timestamp, nErr);
+                            fflush(Logfile);
+#endif
+                            return nErr;
+                        }
+                        swapTubeCommandIssued = true;
+                    }
+                }
+                break;
+        }
+        
+    }  else {
+//--------
+// Northern Sky
+        
+        switch (iMeridianBehaviourStored)
+        {
+            case 0:  // stop at meridian
+                if (currentHourAngle <= 0.0) {
+                    nErr = setTrackingRate(STOPPED);
+                    if (nErr != OK) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
+                        ltime = time(NULL);
+                        timestamp = asctime(localtime(&ltime));
+                        timestamp[strlen(timestamp) - 1] = 0;
+                        fprintf(Logfile, "[%s] [CPulsar2Controller::handleMeridian] Error stopping tracking: %i\n", timestamp, nErr);
+                        fflush(Logfile);
+#endif
+                        return nErr;
+                    }
+                }
+                break;
+            case 1:  // flip at meridian, if not already flipped
+                if (currentHourAngle <= 0.0) {  // nPierSide should always be 1 as we bailed if == 0
+                    if (!swapTubeCommandIssued) {
+                        nErr = startSlew(dRA, dDec);
+                        if (nErr != OK) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
+                            ltime = time(NULL);
+                            timestamp = asctime(localtime(&ltime));
+                            timestamp[strlen(timestamp) - 1] = 0;
+                            fprintf(Logfile, "[%s] [CPulsar2Controller::handleMeridian] Error swapping tube: %i\n", timestamp, nErr);
+                            fflush(Logfile);
+#endif
+                            return nErr;
+                        }
+                        swapTubeCommandIssued = true;
+                    }
+                }
+                break;
+            case 2:  // stop at east limit
+                if ((currentHourAngle < 0.0) && (currentHourAngle + 12.0) >= dHoursEastStored) {
+                    nErr = setTrackingRate(STOPPED);
+                    if (nErr != OK) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
+                        ltime = time(NULL);
+                        timestamp = asctime(localtime(&ltime));
+                        timestamp[strlen(timestamp) - 1] = 0;
+                        fprintf(Logfile, "[%s] [CPulsar2Controller::handleMeridian] Error stopping tracking: %i\n", timestamp, nErr);
+                        fflush(Logfile);
+#endif
+                        return nErr;
+                    }
+                }
+                break;
+            case 3:  // flip at (east) flip limit
+                if ((currentHourAngle < 0.0) && (currentHourAngle + 12.0) >= dFlipHourStored) {  // nPierSide should always be 1 as we bailed if == 0
+                    if (!swapTubeCommandIssued) {
+                        nErr = startSlew(dRA, dDec);
+                        if (nErr != OK) {
+#if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_FAILURES
+                            ltime = time(NULL);
+                            timestamp = asctime(localtime(&ltime));
+                            timestamp[strlen(timestamp) - 1] = 0;
+                            fprintf(Logfile, "[%s] [CPulsar2Controller::handleMeridian] Error swapping tube: %i\n", timestamp, nErr);
+                            fflush(Logfile);
+#endif
+                            return nErr;
+                        }
+                        swapTubeCommandIssued = true;
+                    }
+                }
+                break;
+        }
+
     }
+    
     return nErr;
 }
 
@@ -1618,8 +1727,8 @@ int         CPulsar2Controller::getCentreRates(int &iRa, int &iDec)
 // set Guide Rate in RA and Dec
 //
 //
-// Firmware Validity:  4.xx response has 4 characters for each field
-// Firmware Validity:  5.xx response has 3 characters for each field
+// Firmware Validity:  4.xx response has 4 characters for each field, least significant digit is 1/10 sidereal
+// Firmware Validity:  5.xx response has 3 characters for each field, least significant digit is 1x sidereal
 //
 
 {
@@ -1660,9 +1769,14 @@ int         CPulsar2Controller::getCentreRates(int &iRa, int &iDec)
     }
     
     strncpy(cRaSpeed, szResp, commaLength);
+    if (iMajorFirmwareVersion >= 5) {  // v5.xx expresses speeds in integer values x sidereral
     iRa = atoi(cRaSpeed);
-    
     iDec = atoi(&szResp[commaLength+1]);
+    }
+    else {                            // v4.xx expresses speeds in integer values x sidereral/10. We will ignore the 1/10ths
+        iRa = atoi(cRaSpeed)/10;
+        iDec = atoi(&szResp[commaLength+1])/10;
+    }
     
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
     ltime = time(NULL);
@@ -1681,17 +1795,28 @@ int         CPulsar2Controller::setCentreRates(int iRa, int iDec)
 // set Centre Rate in RA and Dec
 //
 //
-// Firmware Validity: >= 4
+// Firmware Validity:  4.xx command has 4 characters for each field, least significant digit is 1/10 sidereal
+// Firmware Validity:  5.xx command has 3 characters for each field, least significant digit is 1x sidereal
 //
 {
     int nErr = OK;
     char szResp[SERIAL_BUFFER_SIZE];
     char szCommand[SERIAL_BUFFER_SIZE];
+    int iRaScaled, iDecScaled;
     
     if(!m_bIsConnected)
         return ERR_NOLINK;
     
-    snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:YSB%d,%d#", iRa, iDec);
+    if (iMajorFirmwareVersion >= 5) {  // v5.xx expresses speeds in integer values x sidereral
+        iRaScaled = iRa;
+        iDecScaled = iDec;
+    }
+    else {                            // v4.xx expresses speeds in integer values x sidereral/10.
+        iRaScaled = iRa * 10;
+        iDecScaled = iDec * 10;
+    }
+    
+    snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:YSB%d,%d#", iRaScaled, iDecScaled);
     
     nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
     if(nErr) {
@@ -1699,7 +1824,7 @@ int         CPulsar2Controller::setCentreRates(int iRa, int iDec)
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CPulsar2Controller::setCentreRates] Error setting Centre Rates to %d, %d : %s\n", timestamp, iRa, iDec, szResp);
+        fprintf(Logfile, "[%s] [CPulsar2Controller::setCentreRates] Error setting Centre Rates to %d, %d : %s\n", timestamp, iRaScaled, iDecScaled, szResp);
         fflush(Logfile);
 #endif
         return nErr;
@@ -1711,7 +1836,7 @@ int         CPulsar2Controller::setCentreRates(int iRa, int iDec)
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CPulsar2Controller::setCentreRates] Error setting Centre Rates to %d, %d : %s\n", timestamp, iRa, iDec, szResp);
+        fprintf(Logfile, "[%s] [CPulsar2Controller::setCentreRates] Error setting Centre Rates to %d, %d : %s\n", timestamp, iRaScaled, iDecScaled, szResp);
         fprintf(Logfile, "[%s] [CPulsar2Controller::setCentreRates] ERR_CMDFAILED: nErr = %d\n", timestamp, nErr);
         fflush(Logfile);
 #endif
@@ -1725,8 +1850,8 @@ int         CPulsar2Controller::getFindRates(int &iRa, int &iDec)
 // set Guide Rate in RA and Dec
 //
 //
-// Firmware Validity:  4.xx response has 4 characters for each field
-// Firmware Validity:  5.xx response has 3 characters for each field
+// Firmware Validity:  4.xx response has 4 characters for each field, least significant digit is 1/10 sidereal
+// Firmware Validity:  5.xx response has 3 characters for each field, least significant digit is 1x sidereal
 //
 
 {
@@ -1767,9 +1892,15 @@ int         CPulsar2Controller::getFindRates(int &iRa, int &iDec)
     }
     
     strncpy(cRaSpeed, szResp, commaLength);
-    iRa = atoi(cRaSpeed);
-    
-    iDec = atoi(&szResp[commaLength+1]);
+    if (iMajorFirmwareVersion >= 5) {  // v5.xx expresses speeds in integer values x sidereral
+        iRa = atoi(cRaSpeed);
+        iDec = atoi(&szResp[commaLength+1]);
+    }
+    else {                            // v4.xx expresses speeds in integer values x sidereral/10. We will ignore the 1/10ths
+        iRa = atoi(cRaSpeed)/10;
+        iDec = atoi(&szResp[commaLength+1])/10;
+    }
+
     
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
     ltime = time(NULL);
@@ -1788,17 +1919,28 @@ int         CPulsar2Controller::setFindRates(int iRa, int iDec)
 // set Find Rate in RA and Dec
 //
 //
-// Firmware Validity: >= 4
+// Firmware Validity:  4.xx command has 4 characters for each field, least significant digit is 1/10 sidereal
+// Firmware Validity:  5.xx command has 3 characters for each field, least significant digit is 1x sidereal
 //
 {
     int nErr = OK;
     char szResp[SERIAL_BUFFER_SIZE];
     char szCommand[SERIAL_BUFFER_SIZE];
-    
+    int iRaScaled, iDecScaled;
+
     if(!m_bIsConnected)
         return ERR_NOLINK;
     
-    snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:YSC%d,%d#", iRa, iDec);
+    if (iMajorFirmwareVersion >= 5) {  // v5.xx expresses speeds in integer values x sidereral
+        iRaScaled = iRa;
+        iDecScaled = iDec;
+    }
+    else {                            // v4.xx expresses speeds in integer values x sidereral/10.
+        iRaScaled = iRa * 10;
+        iDecScaled = iDec * 10;
+    }
+    
+    snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:YSC%d,%d#", iRaScaled, iDecScaled);
     
     nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
     if(nErr) {
@@ -1806,7 +1948,7 @@ int         CPulsar2Controller::setFindRates(int iRa, int iDec)
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CPulsar2Controller::setFindRates] Error setting Find Rates to %d, %d : %s\n", timestamp, iRa, iDec, szResp);
+        fprintf(Logfile, "[%s] [CPulsar2Controller::setFindRates] Error setting Find Rates to %d, %d : %s\n", timestamp, iRaScaled, iDecScaled, szResp);
         fflush(Logfile);
 #endif
         return nErr;
@@ -1818,7 +1960,7 @@ int         CPulsar2Controller::setFindRates(int iRa, int iDec)
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CPulsar2Controller::setFindRates] Error setting Find Rates to %d, %d : %s\n", timestamp, iRa, iDec, szResp);
+        fprintf(Logfile, "[%s] [CPulsar2Controller::setFindRates] Error setting Find Rates to %d, %d : %s\n", timestamp, iRaScaled, iDecScaled, szResp);
         fprintf(Logfile, "[%s] [CPulsar2Controller::setFindRates] ERR_CMDFAILED: nErr = %d\n", timestamp, nErr);
         fflush(Logfile);
 #endif
@@ -1832,8 +1974,8 @@ int         CPulsar2Controller::getSlewRates(int &iRa, int &iDec)
 // set Guide Rate in RA and Dec
 //
 //
-// Firmware Validity:  4.xx response has 4 characters for each field
-// Firmware Validity:  5.xx response has 3 characters for each field
+// Firmware Validity:  4.xx response has 4 characters for each field, least significant digit is 1/10 sidereal
+// Firmware Validity:  5.xx response has 3 characters for each field, least significant digit is 1x sidereal
 //
 
 {
@@ -1874,10 +2016,15 @@ int         CPulsar2Controller::getSlewRates(int &iRa, int &iDec)
     }
     
     strncpy(cRaSpeed, szResp, commaLength);
-    iRa = atoi(cRaSpeed);
-    
-    iDec = atoi(&szResp[commaLength+1]);
-    
+    if (iMajorFirmwareVersion >= 5) {  // v5.xx expresses speeds in integer values x sidereral
+        iRa = atoi(cRaSpeed);
+        iDec = atoi(&szResp[commaLength+1]);
+    }
+    else {                            // v4.xx expresses speeds in integer values x sidereral/10. We will ignore the 1/10ths
+        iRa = atoi(cRaSpeed)/10;
+        iDec = atoi(&szResp[commaLength+1])/10;
+    }
+
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
@@ -1895,17 +2042,28 @@ int         CPulsar2Controller::setSlewRates(int iRa, int iDec)
 // set Slew Rate in RA and Dec
 //
 //
-// Firmware Validity: >= 4
+// Firmware Validity:  4.xx command has 4 characters for each field, least significant digit is 1/10 sidereal
+// Firmware Validity:  5.xx command has 3 characters for each field, least significant digit is 1x sidereal
 //
 {
     int nErr = OK;
     char szResp[SERIAL_BUFFER_SIZE];
     char szCommand[SERIAL_BUFFER_SIZE];
-    
+    int iRaScaled, iDecScaled;
+
     if(!m_bIsConnected)
         return ERR_NOLINK;
     
-    snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:YSD%d,%d#", iRa, iDec);
+    if (iMajorFirmwareVersion >= 5) {  // v5.xx expresses speeds in integer values x sidereral
+        iRaScaled = iRa;
+        iDecScaled = iDec;
+    }
+    else {                            // v4.xx expresses speeds in integer values x sidereral/10.
+        iRaScaled = iRa * 10;
+        iDecScaled = iDec * 10;
+    }
+    
+   snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:YSD%d,%d#", iRaScaled, iDecScaled);
     
     nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
     if(nErr) {
@@ -1913,7 +2071,7 @@ int         CPulsar2Controller::setSlewRates(int iRa, int iDec)
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CPulsar2Controller::setSlewRates] Error setting Slew Rates to %d, %d : %s\n", timestamp, iRa, iDec, szResp);
+        fprintf(Logfile, "[%s] [CPulsar2Controller::setSlewRates] Error setting Slew Rates to %d, %d : %s\n", timestamp, iRaScaled, iDecScaled, szResp);
         fflush(Logfile);
 #endif
         return nErr;
@@ -1925,7 +2083,7 @@ int         CPulsar2Controller::setSlewRates(int iRa, int iDec)
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CPulsar2Controller::setSlewRates] Error setting Slew Rates to %d, %d : %s\n", timestamp, iRa, iDec, szResp);
+        fprintf(Logfile, "[%s] [CPulsar2Controller::setSlewRates] Error setting Slew Rates to %d, %d : %s\n", timestamp, iRaScaled, iDecScaled, szResp);
         fprintf(Logfile, "[%s] [CPulsar2Controller::setSlewRates] ERR_CMDFAILED: nErr = %d\n", timestamp, nErr);
         fflush(Logfile);
 #endif
@@ -1939,8 +2097,8 @@ int         CPulsar2Controller::getGoToRates(int &iRa, int &iDec)
 // set Guide Rate in RA and Dec
 //
 //
-// Firmware Validity:  4.xx response has 4 characters for each field
-// Firmware Validity:  5.xx response has 3 characters for each field
+// Firmware Validity:  4.xx response has 4 characters for each field, least significant digit is 1/10 sidereal
+// Firmware Validity:  5.xx response has 3 characters for each field, least significant digit is 1x sidereal
 //
 
 {
@@ -1981,10 +2139,15 @@ int         CPulsar2Controller::getGoToRates(int &iRa, int &iDec)
     }
     
     strncpy(cRaSpeed, szResp, commaLength);
-    iRa = atoi(cRaSpeed);
-    
-    iDec = atoi(&szResp[commaLength+1]);
-    
+    if (iMajorFirmwareVersion >= 5) {  // v5.xx expresses speeds in integer values x sidereral
+        iRa = atoi(cRaSpeed);
+        iDec = atoi(&szResp[commaLength+1]);
+    }
+    else {                            // v4.xx expresses speeds in integer values x sidereral/10. We will ignore the 1/10ths
+        iRa = atoi(cRaSpeed)/10;
+        iDec = atoi(&szResp[commaLength+1])/10;
+    }
+
 #if defined PULSAR2_DEBUG && PULSAR2_DEBUG >= VERBOSE_RESULTS
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
@@ -2001,17 +2164,28 @@ int         CPulsar2Controller::setGoToRates(int iRa, int iDec)
 // set GoTo Rate in RA and Dec
 //
 //
-// Firmware Validity: >= 4
+// Firmware Validity:  4.xx command has 4 characters for each field, least significant digit is 1/10 sidereal
+// Firmware Validity:  5.xx command has 3 characters for each field, least significant digit is 1x sidereal
 //
 {
     int nErr = OK;
     char szResp[SERIAL_BUFFER_SIZE];
     char szCommand[SERIAL_BUFFER_SIZE];
-    
+    int iRaScaled, iDecScaled;
+
     if(!m_bIsConnected)
         return ERR_NOLINK;
     
-    snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:YSE%d,%d#", iRa, iDec);
+    if (iMajorFirmwareVersion >= 5) {  // v5.xx expresses speeds in integer values x sidereral
+        iRaScaled = iRa;
+        iDecScaled = iDec;
+    }
+    else {                            // v4.xx expresses speeds in integer values x sidereral/10.
+        iRaScaled = iRa * 10;
+        iDecScaled = iDec * 10;
+    }
+    
+    snprintf(szCommand, SERIAL_BUFFER_SIZE, "#:YSE%d,%d#", iRaScaled, iDecScaled);
     
     nErr = sendCommand(szCommand, szResp, SERIAL_BUFFER_SIZE, 1, true); // not extra # in response so 1 reponse read, 1 byte response.
     if(nErr) {
@@ -2019,7 +2193,7 @@ int         CPulsar2Controller::setGoToRates(int iRa, int iDec)
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CPulsar2Controller::setGoToRates] Error setting GoTo Rates to %d, %d : %s\n", timestamp, iRa, iDec, szResp);
+        fprintf(Logfile, "[%s] [CPulsar2Controller::setGoToRates] Error setting GoTo Rates to %d, %d : %s\n", timestamp, iRaScaled, iDecScaled, szResp);
         fflush(Logfile);
 #endif
         return nErr;
@@ -2031,7 +2205,7 @@ int         CPulsar2Controller::setGoToRates(int iRa, int iDec)
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CPulsar2Controller::setGoToRates] Error setting GoTo Rates to %d, %d : %s\n", timestamp, iRa, iDec, szResp);
+        fprintf(Logfile, "[%s] [CPulsar2Controller::setGoToRates] Error setting GoTo Rates to %d, %d : %s\n", timestamp, iRaScaled, iDecScaled, szResp);
         fprintf(Logfile, "[%s] [CPulsar2Controller::setGoToRates] ERR_CMDFAILED: nErr = %d\n", timestamp, nErr);
         fflush(Logfile);
 #endif
