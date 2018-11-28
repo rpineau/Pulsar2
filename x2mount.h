@@ -62,7 +62,7 @@ enum DEBUG_LEVEL {NONE = 0, METHOD, VERBOSE};
 
 
 #define X2_MOUNT_NAME       "X2 Pulsar2"
-#define DRIVER_VERSION      1.0
+#define DRIVER_VERSION      1.01
 #define DISPLAY_NAME        "Pulsar2 X2 Plug-In by Richard Francis"
 
 

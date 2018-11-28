@@ -115,14 +115,14 @@
       <item>
        <widget class="QRadioButton" name="radioButton_Continue_Stop">
         <property name="text">
-         <string>Continue to Track with Stop at West limit</string>
+         <string>Continue to Track with Stop at East/West limit</string>
         </property>
        </widget>
       </item>
       <item>
        <widget class="QRadioButton" name="radioButton_Continue_Flip">
         <property name="text">
-         <string>Continue to Track with Flip at specified Hour Angle</string>
+         <string>Continue to Track with Flip at specified time past meridian</string>
         </property>
        </widget>
       </item>
@@ -213,14 +213,14 @@
      <widget class="QLabel" name="label_2">
       <property name="geometry">
        <rect>
-        <x>15</x>
+        <x>2</x>
         <y>96</y>
-        <width>248</width>
+        <width>261</width>
         <height>24</height>
        </rect>
       </property>
       <property name="text">
-       <string>Hour Angle for automatic telescope flip :</string>
+       <string>Time past meridian for OTA flip [hours] :</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -272,6 +272,19 @@
       </property>
       <property name="text">
        <string>Flip</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_13">
+      <property name="geometry">
+       <rect>
+        <x>360</x>
+        <y>32</y>
+        <width>60</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Stop</string>
       </property>
      </widget>
     </widget>
