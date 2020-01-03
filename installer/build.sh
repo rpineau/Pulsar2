@@ -1,17 +1,16 @@
 #!/bin/bash
 
-PACKAGE_NAME="ATCS_X2.pkg"
-BUNDLE_NAME="org.rti-zone.ATCSX2"
+PACKAGE_NAME="Pulsar2_X2.pkg"
+BUNDLE_NAME="org.rti-zone.Pulsar2X2"
 
 if [ ! -z "$app_id_signature" ]; then
-    codesign -f -s "$app_id_signature" --verbose ../build/Release/libATCS.dylib
+    codesign -f -s "$app_id_signature" --verbose ../build/Release/libPulsar2.dylib
 fi
 
-mkdir -p ROOT/tmp/ATCS_X2/
-cp "../ATCS.ui" ROOT/tmp/ATCS_X2/
-cp "../mountlist ATCS.txt" ROOT/tmp/ATCS_X2/
-cp "../Astrometric.png" ROOT/tmp/ATCS_X2/
-cp "../build/Release/libATCS.dylib" ROOT/tmp/ATCS_X2/
+mkdir -p ROOT/tmp/Pulsar2_X2/
+cp "../Pulsar2.ui" ROOT/tmp/Pulsar2_X2/
+cp "../mountlist Pulsar2.txt" ROOT/tmp/Pulsar2_X2/
+cp "../build/Release/libPulsar2.dylib" ROOT/tmp/Pulsar2_X2/
 
 if [ ! -z "$installer_signature" ]; then
 	# signed package using env variable installer_signature
