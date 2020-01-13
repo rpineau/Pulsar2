@@ -397,13 +397,23 @@ int X2Mount::beyondThePole(bool& bYes)
     if(nErr)
         return nErr;
 
-    // we will define west (1) as normal, and
-    // east (0) as beyond the pole
     //
-    // That was wrong: https://www.gralak.com/apdriver/help/pier_side.htm explains
+    // https://www.gralak.com/apdriver/help/pier_side.htm explains
     // that East (here 0) is normal, and West (1) is Beyond the Pole
+    //
     bYes = poleResult == 1?true:false;
 
+    /*
+    // this bit is to better understand "beyond the pole"
+    if (GetLogger()) {
+        if (bYes) {
+        GetLogger()->out((char *) "[X2Mount::beyondThePole] poleResult = 1 (west); beyondThePole = true");
+        }  else {
+        GetLogger()->out((char *) "[X2Mount::beyondThePole] poleResult = 0 (east); beyondThePole = false");
+        }
+    }
+    */
+    
     return nErr;
  }
 
