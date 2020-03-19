@@ -35,8 +35,12 @@ echo "Installing in $PLUGINS_DIR/MountPlugIns/"
 
 cp -f "/tmp/Pulsar2_X2/mountlist Pulsar2.txt" "$TheSkyX_Path/Resources/Common/Miscellaneous Files/"
 if [ "$?" -ne "0" ]; then exit 1; fi
+
+rm -f "$PLUGINS_DIR/MountPlugIns/Pulsar2.ui"
 cp -f "/tmp/Pulsar2_X2/Pulsar2.ui" "$PLUGINS_DIR/MountPlugIns/"
 if [ "$?" -ne "0" ]; then exit 1; fi
+
+rm -f "$PLUGINS_DIR/MountPlugIns/libPulsar2.dylib"
 cp -f "/tmp/Pulsar2_X2/libPulsar2.dylib" "$PLUGINS_DIR/MountPlugIns/"
 if [ "$?" -ne "0" ]; then exit 1; fi
 
